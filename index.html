@@ -40,10 +40,14 @@ body{font-family:var(--font-sans);display:flex;flex-direction:column;align-items
 #gem-app #list-head{padding:10px 12px 8px;border-bottom:1px solid rgba(201,169,110,.22)}
 #gem-app #search{width:100%;height:32px;border:1px solid rgba(201,169,110,.4);border-radius:8px;padding:0 10px;font-size:12px;background:#1e2a42;color:#f0e6cc;outline:none}
 #gem-app #search::placeholder{color:#8a94a8}
-#gem-app #chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
-#gem-app #chips .chip{padding:4px 11px !important;border-radius:14px !important;border:1.5px solid #c9a96e !important;background:#2a3a5c !important;font-size:11px !important;color:#f2dca6 !important;cursor:pointer;transition:background .15s,color .15s;font-weight:500 !important}
-#gem-app #chips .chip:hover{background:#3a4e78 !important}
+#gem-app #chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;max-height:104px;overflow-y:auto;padding-right:2px}
+#gem-app #chips::-webkit-scrollbar{width:6px}
+#gem-app #chips::-webkit-scrollbar-thumb{background:rgba(201,169,110,.3);border-radius:3px}
+#gem-app #chips .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px !important;border-radius:13px !important;border:1px solid rgba(201,169,110,.5) !important;background:#243350 !important;font-size:10.5px !important;color:#e6d3a0 !important;cursor:pointer;transition:background .15s,color .15s;font-weight:500 !important}
+#gem-app #chips .chip:hover{background:#33456a !important}
 #gem-app #chips .chip.active{background:#d4b878 !important;color:#1a1408 !important;border-color:#f0d896 !important}
+#gem-app #chips .chip .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+#gem-app #chips .chip.active .dot{box-shadow:0 0 0 1px rgba(0,0,0,.25)}
 #gem-app #gem-count{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:#8a94a8;margin-top:8px;padding-top:7px;border-top:1px solid rgba(201,169,110,.18)}
 #gem-app #gem-count b{color:#d8c290;font-weight:500}
 #gem-app #gem-list{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px}
@@ -91,15 +95,7 @@ body{font-family:var(--font-sans);display:flex;flex-direction:column;align-items
     <aside id="list-panel">
       <div id="list-head">
         <input id="search" placeholder="搜索宝石 / 产地…"/>
-        <div id="chips">
-          <button class="chip active" data-f="all">全部</button>
-          <button class="chip" data-f="corundum">刚玉</button>
-          <button class="chip" data-f="beryl">绿柱石</button>
-          <button class="chip" data-f="jade">玉石</button>
-          <button class="chip" data-f="quartz">石英</button>
-          <button class="chip" data-f="organic">有机</button>
-          <button class="chip" data-f="other">其他</button>
-        </div>
+        <div id="chips"></div>
         <div id="gem-count"></div>
       </div>
       <div id="gem-list"></div>
@@ -475,9 +471,21 @@ function buildGlobe(landCanvas, topoImg){
   globeMesh=new THREE.Mesh(geo,mat);earthGroup.add(globeMesh);
 }
 function addMarkers(){gemObjs.forEach(function(g){earthGroup.remove(g);});gemObjs=[];pickMeshes=[];GEMS.forEach(function(g){if(!markerPass(g)) return;const obj=makeGem(g);earthGroup.add(obj);gemObjs.push(obj);});}
-function markerPass(g){if(currentFilter!=='all'&&g.family!==currentFilter) return false;if(searchQ){const q=searchQ.toLowerCase();if(!(g.name.toLowerCase().indexOf(q)>=0||g.loc.toLowerCase().indexOf(q)>=0)) return false;}return true;}
+function markerPass(g){if(currentFilter!=='all'&&g.sp!==currentFilter) return false;if(searchQ){const q=searchQ.toLowerCase();if(!(g.name.toLowerCase().indexOf(q)>=0||g.loc.toLowerCase().indexOf(q)>=0)) return false;}return true;}
 
 function familyName(f){return {corundum:'刚玉族',beryl:'绿柱石族',jade:'翠玉',quartz:'石英族',organic:'有机宝石',other:'其他矿物'}[f];}
+// 动态生成筛选 chip：全部 + 每种宝石品种（带颜色点），一眼看到所有种类
+function buildChips(){
+  const box=document.getElementById('chips');box.innerHTML='';
+  function mk(f,label,color){
+    const b=document.createElement('button');b.className='chip'+(f===currentFilter?' active':'');b.dataset.f=f;
+    b.innerHTML=(color!=null?'<span class="dot" style="background:#'+color.toString(16).padStart(6,'0')+'"></span>':'')+label;
+    b.addEventListener('click',function(){currentFilter=f;document.querySelectorAll('#chips .chip').forEach(function(c){c.classList.toggle('active',c.dataset.f===f);});addMarkers();buildList();});
+    box.appendChild(b);
+  }
+  mk('all','全部',null);
+  Object.keys(SPECIES).forEach(function(sp){ mk(sp,SPECIES[sp].name,SPECIES[sp].color); });
+}
 function buildList(){
   listEl.innerHTML='';
   let list=GEMS.filter(markerPass);
@@ -529,7 +537,7 @@ function setupEvents(){
   canvas.addEventListener('touchend',function(){isDragging=false;});
   document.getElementById('close-btn').addEventListener('click',closeModal);
   overlay.addEventListener('click',function(e){if(e.target===overlay) closeModal();});
-  document.querySelectorAll('.chip').forEach(function(btn){btn.addEventListener('click',function(){document.querySelectorAll('.chip').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');currentFilter=btn.dataset.f;addMarkers();buildList();});});
+  buildChips();
   document.getElementById('search').addEventListener('input',function(e){searchQ=e.target.value;addMarkers();buildList();});
   window.addEventListener('resize',function(){const W=wrap.clientWidth,H=wrap.clientHeight;camera.aspect=W/H;camera.updateProjectionMatrix();renderer.setSize(W,H);drawStars();});
 }

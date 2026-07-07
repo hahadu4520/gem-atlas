@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>宝石图鉴 · 如果地球是一座宝库</title>
+<meta name="description" content="32 种宝石、160 处全球产区的 3D 交互地球图鉴。点击晶簇查看产地科普。"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --font-sans:'Noto Sans SC',system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+  --font-serif:'Noto Serif SC','Songti SC',serif;
+  --color-text-primary:#f0e6cc;
+  --color-text-secondary:#b8a888;
+}
+html,body{margin:0;padding:0;background:#0a0f1a;min-height:100%}
+body{font-family:var(--font-sans);display:flex;flex-direction:column;align-items:center;padding:14px 12px 24px}
+#page-wrap{width:100%;max-width:1000px}
+#footer{max-width:1000px;margin:14px auto 0;text-align:center;font-size:11px;color:#5a6478;line-height:1.7}
+#footer a{color:#8a94a8;text-decoration:none}
+@media(max-width:720px){
+  #gem-app #layout{flex-direction:column;height:auto !important}
+  #gem-app #list-panel{width:100% !important;height:200px}
+  #gem-app #globe-wrap{height:400px}
+}
+</style>
+</head>
+<body>
+<div id="page-wrap">
+<style>
+#gem-app *{box-sizing:border-box;margin:0;padding:0}
+#gem-app{font-family:var(--font-sans);width:100%;user-select:none;position:relative}
+#gem-app #title-bar{text-align:center;padding:10px 0 8px}
+#gem-app #title-bar h1{font-family:var(--font-serif);font-size:22px;font-weight:500;color:var(--color-text-primary);letter-spacing:.08em}
+#gem-app #title-bar p{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+#gem-app #layout{display:flex;gap:10px;height:520px}
+#gem-app #list-panel{width:222px;flex-shrink:0;background:#10192b;border:1px solid rgba(201,169,110,.38);border-radius:14px;display:flex;flex-direction:column;overflow:hidden}
+#gem-app #list-head{padding:10px 12px 8px;border-bottom:1px solid rgba(201,169,110,.22)}
+#gem-app #search{width:100%;height:32px;border:1px solid rgba(201,169,110,.4);border-radius:8px;padding:0 10px;font-size:12px;background:#1e2a42;color:#f0e6cc;outline:none}
+#gem-app #search::placeholder{color:#8a94a8}
+#gem-app #chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+#gem-app #chips .chip{padding:4px 11px !important;border-radius:14px !important;border:1.5px solid #c9a96e !important;background:#2a3a5c !important;font-size:11px !important;color:#f2dca6 !important;cursor:pointer;transition:background .15s,color .15s;font-weight:500 !important}
+#gem-app #chips .chip:hover{background:#3a4e78 !important}
+#gem-app #chips .chip.active{background:#d4b878 !important;color:#1a1408 !important;border-color:#f0d896 !important}
+#gem-app #gem-count{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:#8a94a8;margin-top:8px;padding-top:7px;border-top:1px solid rgba(201,169,110,.18)}
+#gem-app #gem-count b{color:#d8c290;font-weight:500}
+#gem-app #gem-list{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px}
+#gem-app #gem-list::-webkit-scrollbar{width:8px}
+#gem-app #gem-list::-webkit-scrollbar-thumb{background:rgba(201,169,110,.3);border-radius:4px}
+#gem-app .gem-card{display:flex;gap:8px;align-items:center;padding:7px 8px;border:1px solid rgba(255,255,255,.07);border-radius:9px;background:#162034;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+#gem-app .gem-card:hover{border-color:rgba(201,169,110,.6);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.4)}
+#gem-app .gem-card.active{border-color:#e8a050;box-shadow:0 0 0 1px #e8a050}
+#gem-app .gem-card img{width:38px;height:38px;border-radius:7px;object-fit:cover;flex-shrink:0;border:1px solid rgba(201,169,110,.3)}
+#gem-app .gem-card .info{min-width:0;flex:1}
+#gem-app .gem-card .nm{font-size:12px;font-weight:500;color:#ece2c8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#gem-app .gem-card .lc{font-size:10.5px;color:#8a94a8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#gem-app .gem-card .swatch{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+#gem-app .gem-card .cnt{font-size:9.5px;color:#c9a96e;background:rgba(201,169,110,.14);border:1px solid rgba(201,169,110,.3);border-radius:8px;padding:1px 6px;flex-shrink:0;white-space:nowrap}
+#gem-app #globe-wrap{flex:1;position:relative;border-radius:14px;overflow:hidden;background:radial-gradient(ellipse at 50% 42%, #1a2438 0%, #0d1424 68%, #070b16 100%);border:1px solid rgba(201,169,110,.38)}
+#gem-app #stars{position:absolute;inset:0;z-index:0}
+#gem-app #globe-canvas{width:100%;height:100%;display:block;cursor:grab;position:relative;z-index:1}
+#gem-app #tooltip{position:absolute;background:#1a2438;border:1px solid rgba(201,169,110,.5);border-radius:8px;padding:6px 10px;font-size:12px;color:#ece2c8;pointer-events:none;display:none;white-space:nowrap;z-index:10}
+#gem-app #modal-overlay{position:absolute;inset:0;background:rgba(5,8,14,.55);display:none;align-items:center;justify-content:center;z-index:30;border-radius:14px}
+#gem-app #detail-modal{width:300px;max-height:466px;background:#131c30;border:1px solid rgba(201,169,110,.55);border-radius:16px;box-shadow:0 12px 44px rgba(0,0,0,.6);position:relative;display:flex;flex-direction:column;overflow:hidden}
+#gem-app #dp-scroll{overflow-y:auto;padding:16px 18px}
+#gem-app #dp-scroll::-webkit-scrollbar{width:8px}
+#gem-app #dp-scroll::-webkit-scrollbar-thumb{background:rgba(201,169,110,.3);border-radius:4px}
+#gem-app #detail-modal .photo{width:100%;height:150px;object-fit:cover;border-radius:10px;border:1px solid rgba(201,169,110,.45);margin-bottom:12px;display:block}
+#gem-app #detail-modal h3{font-size:18px;font-weight:500;text-align:center;margin-bottom:2px;color:#f0e6cc}
+#gem-app #detail-modal .sub{font-size:12px;color:#9aa4b8;text-align:center;margin-bottom:8px}
+#gem-app #detail-modal .badges{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:12px}
+#gem-app #detail-modal .badge{font-size:10.5px;padding:2px 8px;border-radius:10px;background:rgba(201,169,110,.16);color:#d8c290;border:1px solid rgba(201,169,110,.4)}
+#gem-app #detail-modal .desc{font-size:12px;line-height:1.7;color:#c2cadc;margin-bottom:10px}
+#gem-app #detail-modal .site-note{font-size:12px;line-height:1.65;color:#e0c690;background:rgba(201,169,110,.1);border:1px dashed rgba(201,169,110,.45);padding:7px 9px;border-radius:8px;margin-bottom:10px}
+#gem-app #detail-modal .sec-t{font-size:11px;font-weight:500;color:#c9a96e;margin:10px 0 5px;letter-spacing:.05em}
+#gem-app #detail-modal .row{display:flex;justify-content:space-between;font-size:11.5px;border-top:.5px solid rgba(201,169,110,.22);padding:5px 0;color:#9aa4b8}
+#gem-app #detail-modal .row span:last-child{color:#ece2c8;font-weight:500;text-align:right;max-width:170px}
+#gem-app #detail-modal .lore{font-size:12px;line-height:1.65;color:#d0b890;font-style:italic;background:rgba(201,169,110,.08);border-left:2px solid #c9a96e;padding:8px 10px;border-radius:0 6px 6px 0;margin-top:4px}
+#gem-app #close-btn{position:absolute;top:10px;right:10px;background:#1a2438;border:1px solid rgba(201,169,110,.45);font-size:16px;cursor:pointer;color:#c9b88a;border-radius:50%;width:26px;height:26px;z-index:3;line-height:1}
+#gem-app #load-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#c9b48a;font-size:13px;text-align:center;padding:0 20px;z-index:5}
+</style>
+
+<div id="gem-app">
+  <div id="title-bar">
+    <h1>宝石图鉴</h1>
+    <p>如果地球是一座宝库 · 32 种宝石 · 160 处产区</p>
+  </div>
+  <div id="layout">
+    <aside id="list-panel">
+      <div id="list-head">
+        <input id="search" placeholder="搜索宝石 / 产地…"/>
+        <div id="chips">
+          <button class="chip active" data-f="all">全部</button>
+          <button class="chip" data-f="corundum">刚玉</button>
+          <button class="chip" data-f="beryl">绿柱石</button>
+          <button class="chip" data-f="jade">玉石</button>
+          <button class="chip" data-f="quartz">石英</button>
+          <button class="chip" data-f="organic">有机</button>
+          <button class="chip" data-f="other">其他</button>
+        </div>
+        <div id="gem-count"></div>
+      </div>
+      <div id="gem-list"></div>
+    </aside>
+    <div id="globe-wrap">
+      <canvas id="stars"></canvas>
+      <canvas id="globe-canvas"></canvas>
+      <div id="load-msg">正在加载地图与宝石照片…</div>
+      <div id="tooltip"></div>
+    </div>
+  </div>
+
+  <div id="modal-overlay">
+    <div id="detail-modal">
+      <button id="close-btn" aria-label="关闭">×</button>
+      <div id="dp-scroll">
+        <img class="photo" id="dp-photo" alt="" />
+        <h3 id="dp-name"></h3>
+        <div class="sub" id="dp-loc"></div>
+        <div class="badges" id="dp-badges"></div>
+        <div class="site-note" id="dp-note" style="display:none"></div>
+        <div class="desc" id="dp-desc"></div>
+        <div class="sec-t">物理性质</div>
+        <div class="row"><span>矿物族</span><span id="dp-family"></span></div>
+        <div class="row"><span>化学成分</span><span id="dp-formula"></span></div>
+        <div class="row"><span>莫氏硬度</span><span id="dp-hardness"></span></div>
+        <div class="row"><span>晶系晶习</span><span id="dp-sys"></span></div>
+        <div class="row"><span>折射率</span><span id="dp-ri"></span></div>
+        <div class="sec-t">颜色成因</div>
+        <div class="desc" id="dp-cause" style="margin-bottom:6px"></div>
+        <div class="sec-t">主要产地</div>
+        <div class="desc" id="dp-sources" style="margin-bottom:6px"></div>
+        <div class="sec-t">文化寓意</div>
+        <div class="lore" id="dp-lore"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<div id="footer">
+  宝石图鉴 · 32 种宝石 · 160 处全球产区　|　宝石照片来自 <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener">Wikimedia Commons</a>（自由授权）<br/>
+  地图数据 Natural Earth / world-atlas　·　用 Three.js 构建
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script>
+(function(){
+const BASE='https://cdn.jsdelivr.net/gh/hahadu4520/gem-atlas-assets@main/gems/';
+const SPECIES={
+ruby:{name:'红宝石',color:0xe83050,img:'ruby',family:'corundum',habit:'corundum',sys:'三方 · 六方桶状',hardness:'9',formula:'Al₂O₃',ri:'1.76–1.77',cause:'微量铬（Cr³⁺）替代铝，吸收黄绿光而呈现浓红。',desc:'红宝石是刚玉家族中的红色变种，硬度仅次于钻石，"鸽血红"为最高品级。',sources:'缅甸、莫桑比克、越南、格陵兰。',lore:'被誉为"宝石之王"，象征热情与爱情，是七月生辰石。',badges:['七月生辰石','宝石之王','摩氏9']},
+sapphire:{name:'蓝宝石',color:0x2f6fe0,img:'sapphire',family:'corundum',habit:'corundum',sys:'三方 · 六方桶状',hardness:'9',formula:'Al₂O₃',ri:'1.76–1.77',cause:'铁（Fe）与钛（Ti）共同致色，产生标志性的蓝色。',desc:'蓝宝石与红宝石同为刚玉，除红色外的刚玉宝石统称蓝宝石。',sources:'斯里兰卡、克什米尔、缅甸、马达加斯加、泰柬、澳美中。',lore:'象征忠诚与智慧，九月生辰石，欧洲王室婚戒的经典之选。',badges:['九月生辰石','矢车菊蓝','摩氏9']},
+emerald:{name:'祖母绿',color:0x18b35e,img:'emerald',family:'beryl',habit:'beryl',sys:'六方 · 六方长柱',hardness:'7.5',formula:'Be₃Al₂Si₆O₁₈',ri:'1.57–1.58',cause:'铬（Cr）与钒（V）致色，呈饱满翠绿；几乎都含天然包裹体（"花园"）。',desc:'祖母绿是绿柱石的绿色变种，被视为"有生命的宝石"。',sources:'哥伦比亚、赞比亚、巴西、阿富汗、埃及（古）。',lore:'象征希望与新生，五月生辰石，克娄巴特拉的挚爱。',badges:['五月生辰石','绿宝石之王','有生命的宝石']},
+opal:{name:'欧泊',color:0xff9e2c,img:'opal',family:'other',habit:'nodule',sys:'非晶质 · 结核状',hardness:'5.5–6.5',formula:'SiO₂·nH₂O',ri:'1.37–1.47',cause:'内部二氧化硅微球规则排列对光衍射，形成变幻的"变彩"。',desc:'欧泊是含水的非晶质二氧化硅，魅力在随角度流转的彩虹"变彩"。',sources:'澳大利亚、埃塞俄比亚、巴西、墨西哥。',lore:'被称为"宝石中的调色盘"，十月生辰石。',badges:['十月生辰石','变彩','含水矿物']},
+'black-opal':{name:'黑欧泊',color:0xff7a3c,img:'black-opal',family:'other',habit:'nodule',sys:'非晶质 · 结核状',hardness:'5.5–6.5',formula:'SiO₂·nH₂O',ri:'1.37–1.47',cause:'深色胎体上的微球衍射，使变彩格外浓烈艳丽。',desc:'黑欧泊是欧泊中最珍贵的品种，深色胎体让变彩对比强烈。',sources:'澳大利亚闪电岭。',lore:'被誉为"欧泊之王"，是澳大利亚国石。',badges:['十月生辰石','欧泊之王','澳大利亚国石']},
+'fire-opal':{name:'火欧泊',color:0xff6a2c,img:'fire-opal',family:'other',habit:'nodule',sys:'非晶质 · 结核状',hardness:'5.5–6.5',formula:'SiO₂·nH₂O',ri:'1.37–1.47',cause:'铁的氧化物致体色橙红，部分带变彩，多产于火山岩空腔。',desc:'火欧泊以炽烈的橙红体色著称，透明如凝固的火焰。',sources:'墨西哥克雷塔罗、埃塞俄比亚。',lore:'阿兹特克人视其为"天堂鸟之石"。',badges:['十月生辰石','火焰之色','火山之子']},
+jade:{name:'翡翠',color:0x1fc873,img:'jade',family:'jade',habit:'pebble',sys:'单斜 · 致密块状',hardness:'6.5–7',formula:'NaAlSi₂O₆',ri:'1.66',cause:'铬致色呈翠绿（"帝王绿"），铁致色偏暗；"种"越好越通透。',desc:'翡翠是以硬玉为主的多晶集合体，东方文化中的"玉石之王"。',sources:'缅甸帕敢、危地马拉、云南（集散）。',lore:'象征君子德行与吉祥平安，"黄金有价玉无价"。',badges:['玉石之王','帝王绿','东方瑰宝']},
+nephrite:{name:'和田玉',color:0xd8d0b8,img:'jade',family:'jade',habit:'pebble',sys:'单斜 · 致密块状',hardness:'6–6.5',formula:'Ca₂(Mg,Fe)₅Si₈O₂₂(OH)₂',ri:'1.61–1.63',cause:'透闪石纤维交织，铁含量决定青白至碧绿；羊脂白玉最珍。',desc:'和田玉（软玉）是中华玉文化的核心，温润如脂，八千年琢玉史。',sources:'新疆和田、俄罗斯、加拿大、青海。',lore:'"君子比德于玉"，象征仁义礼智信。',badges:['软玉之王','羊脂白玉','华夏玉魂']},
+purple:{name:'紫水晶',color:0x7a44ee,img:'purple',family:'quartz',habit:'quartz',sys:'三方 · 六方尖晶',hardness:'7',formula:'SiO₂',ri:'1.54–1.55',cause:'微量铁经天然辐照产生色心，呈淡紫到深紫。',desc:'紫水晶是石英家族最珍贵的品种，常呈尖晶晶簇产出。',sources:'巴西、乌拉圭、赞比亚。',lore:'象征高贵与冷静，二月生辰石。',badges:['二月生辰石','石英家族','晶簇']},
+tanzanite:{name:'坦桑石',color:0x5a4ae0,img:'tanzanite',family:'other',habit:'prismatic',sys:'斜方 · 柱状',hardness:'6–7',formula:'Ca₂Al₃(SiO₄)₃(OH)',ri:'1.69–1.70',cause:'钒致色，强多色性——不同角度可见蓝、紫、酒红。',desc:'坦桑石 1967 年才被发现，全球仅坦桑尼亚一处产出。',sources:'坦桑尼亚梅雷拉尼山（全球唯一）。',lore:'因蒂芙尼命名而声名大噪，十二月生辰石。',badges:['十二月生辰石','全球唯一产地','强多色性']},
+topaz:{name:'托帕石',color:0xf0c020,img:'topaz',family:'other',habit:'prismatic',sys:'斜方 · 柱状',hardness:'8',formula:'Al₂SiO₄(F,OH)₂',ri:'1.61–1.64',cause:'纯净无色，杂质与缺陷产生黄、金、粉；"帝王托帕"最珍贵。',desc:'托帕石硬度高、透明度好，金黄"帝王托帕"价值最高。',sources:'巴西、尼日利亚、巴基斯坦、俄罗斯。',lore:'象征友谊与富足，十一月生辰石。',badges:['十一月生辰石','帝王托帕','摩氏8']},
+diamond:{name:'钻石',color:0xeaf0ff,img:'diamond',family:'other',habit:'octa',sys:'等轴 · 八面体',hardness:'10',formula:'C',ri:'2.42',cause:'纯碳无色；含硼呈蓝、含氮呈黄。极高折射率与色散带来"火彩"。',desc:'钻石是最硬的天然物质，纯碳在地幔高温高压下结晶。',sources:'俄罗斯、博茨瓦纳、加拿大、非洲多国、印度（古）。',lore:'象征永恒与坚贞，四月生辰石。',badges:['四月生辰石','摩氏10','最硬天然物']},
+aquamarine:{name:'海蓝宝石',color:0x7fd8e0,img:'aquamarine',family:'beryl',habit:'beryl',sys:'六方 · 六方长柱',hardness:'7.5',formula:'Be₃Al₂Si₆O₁₈',ri:'1.57–1.58',cause:'微量二价铁致色，呈清澈海水蓝到蓝绿。',desc:'海蓝宝石是绿柱石的浅蓝变种，晶体常呈完整六方长柱。',sources:'巴西、巴基斯坦、中国新疆、尼日利亚。',lore:'象征沉着与勇气，三月生辰石，水手的护身符。',badges:['三月生辰石','海水蓝','水手护符']},
+tourmaline:{name:'碧玺',color:0xff4d94,img:'tourmaline',family:'other',habit:'prismatic',sys:'三方 · 长柱状',hardness:'7–7.5',formula:'复杂硼硅酸盐',ri:'1.62–1.64',cause:'铜致霓虹蓝绿、锰致粉红、铁致墨绿，单晶可多色（西瓜碧玺）。',desc:'碧玺是颜色最丰富的宝石，帕拉伊巴的霓虹蓝绿最珍贵。',sources:'巴西、莫桑比克、美国加州、阿富汗。',lore:'被称为"落入人间的彩虹"。',badges:['十月生辰石','西瓜碧玺','人间彩虹']},
+garnet:{name:'石榴石',color:0x9b1b30,img:'garnet',family:'other',habit:'octa',sys:'等轴 · 菱形十二面体',hardness:'6.5–7.5',formula:'X₃Y₂(SiO₄)₃',ri:'1.74–1.89',cause:'铁镁致深红、锰致橙、铬钒致绿，是一个庞大家族。',desc:'石榴石最常见为深红色，晶体常呈完美菱形十二面体。',sources:'印度、莫桑比克、肯尼亚、捷克。',lore:'象征忠贞与友谊，一月生辰石。',badges:['一月生辰石','红榴石','完美结晶']},
+moonstone:{name:'月光石',color:0xc8d8e8,img:'moonstone',family:'other',habit:'pebble',sys:'单斜 · 块状',hardness:'6–6.5',formula:'KAlSi₃O₈',ri:'1.52–1.53',cause:'内部长石薄层交替散射光线，形成飘动的蓝白光晕。',desc:'月光石表面飘动的蓝白光晕如月光在水面流转。',sources:'斯里兰卡、印度、马达加斯加。',lore:'象征温柔与直觉，六月生辰石。',badges:['六月生辰石','月光效应','长石家族']},
+lapis:{name:'青金石',color:0x2650a0,img:'lapis',family:'other',habit:'pebble',sys:'集合体 · 致密块状',hardness:'5–5.5',formula:'含硫铝硅酸盐',ri:'1.50',cause:'深蓝矿物伴金色黄铁矿点，形成"金星蓝"。',desc:'青金石因含黄铁矿而闪金点，开采史逾六千年。',sources:'阿富汗、智利、俄罗斯贝加尔。',lore:'象征真理与智慧，磨粉即"群青"颜料。',badges:['古文明圣石','群青颜料','金星蓝']},
+turquoise:{name:'绿松石',color:0x33c0c0,img:'turquoise',family:'other',habit:'nodule',sys:'三斜 · 隐晶块状',hardness:'5–6',formula:'CuAl₆(PO₄)₄(OH)₈·4H₂O',ri:'1.61–1.65',cause:'铜致天蓝，铁致偏绿；纯净天蓝无铁线为顶级。',desc:'绿松石是含铜含水磷酸盐，"波斯蓝"被奉为标准。',sources:'伊朗、埃及西奈、美国西南、中国湖北。',lore:'象征幸运与守护，十二月生辰石。',badges:['十二月生辰石','波斯蓝','护身石']},
+spinel:{name:'尖晶石',color:0xe0405a,img:'spinel',family:'other',habit:'octa',sys:'等轴 · 八面体',hardness:'8',formula:'MgAl₂O₄',ri:'1.71–1.72',cause:'铬致红、铁致蓝紫；红色尖晶石历史上常被误认为红宝石。',desc:'许多"著名红宝石"其实是尖晶石，常呈完美八面体单晶。',sources:'缅甸、坦桑尼亚马亨盖、塔吉克斯坦。',lore:'英国王冠"黑王子红宝石"实为尖晶石。',badges:['被误认的红宝石','完美八面体','摩氏8']},
+alexandrite:{name:'金绿宝石',color:0x9aa030,img:'alexandrite',family:'other',habit:'prismatic',sys:'斜方 · 柱状',hardness:'8.5',formula:'BeAl₂O₄',ri:'1.74–1.75',cause:'铬致色的变石具变色效应——日光呈绿、灯光呈红。',desc:'变石"白昼祖母绿，夜晚红宝石"，以变色效应闻名。',sources:'俄罗斯乌拉尔、巴西、斯里兰卡。',lore:'六月生辰石，俄国国石。',badges:['六月生辰石','变色效应','摩氏8.5']},
+pearl:{name:'珍珠',color:0xf4ece0,img:'pearl',family:'organic',habit:'sphere',sys:'有机 · 球状',hardness:'2.5–4.5',formula:'CaCO₃（文石）',ri:'1.53–1.68',cause:'贝类分泌珍珠层包裹异物，层间干涉产生柔和光泽。',desc:'珍珠是唯一由活体生物孕育的宝石。',sources:'波斯湾、日本、塔希提、南洋、合浦。',lore:'象征纯洁与高贵，六月生辰石。',badges:['六月生辰石','有机宝石','珍珠光泽']},
+morganite:{name:'摩根石',color:0xf0a8b8,img:'morganite',family:'beryl',habit:'beryl',sys:'六方 · 六方柱',hardness:'7.5',formula:'Be₃Al₂Si₆O₁₈',ri:'1.57–1.58',cause:'微量锰致色，呈柔和粉红到桃橙。',desc:'摩根石是绿柱石的粉色变种，因 J.P. 摩根得名。',sources:'巴西、马达加斯加、美国加州。',lore:'象征温柔的爱与治愈。',badges:['绿柱石家族','桃粉色','J.P.摩根命名']},
+zircon:{name:'锆石',color:0x4bb8d8,img:'zircon',family:'other',habit:'prismatic',sys:'四方 · 双锥柱状',hardness:'6–7.5',formula:'ZrSiO₄',ri:'1.92–1.98',cause:'微量元素致蓝、金、红；加热蓝锆石最受欢迎。',desc:'锆石是最古老的矿物之一，火彩接近钻石。',sources:'柬埔寨、澳大利亚、斯里兰卡。',lore:'十二月生辰石，古称"风信子石"。',badges:['十二月生辰石','最古老矿物','高火彩']},
+peridot:{name:'橄榄石',color:0x9ac83a,img:'peridot',family:'other',habit:'pebble',sys:'斜方 · 短柱块状',hardness:'6.5–7',formula:'(Mg,Fe)₂SiO₄',ri:'1.65–1.69',cause:'铁为成分本身，呈标志性橄榄黄绿，颜色恒定。',desc:'橄榄石是少数"自色"宝石，多来自地幔与陨石。',sources:'巴基斯坦、中国河北、埃及、美国。',lore:'八月生辰石，古埃及"太阳的宝石"。',badges:['八月生辰石','自色宝石','来自地幔']},
+prehnite:{name:'葡萄石',color:0xc8d878,img:'prehnite',family:'other',habit:'nodule',sys:'斜方 · 葡萄状集合',hardness:'6–6.5',formula:'Ca₂Al₂Si₃O₁₀(OH)₂',ri:'1.61–1.64',cause:'铁致淡黄绿，半透明"果冻感"，形似葡萄串。',desc:'葡萄石以柔和黄绿和葡萄状外形著称。',sources:'南非、澳大利亚、马里。',lore:'被称为"预言石"，象征平静。',badges:['葡萄状集合','果冻绿','疗愈石']},
+citrine:{name:'黄水晶',color:0xe0a020,img:'citrine',family:'quartz',habit:'quartz',sys:'三方 · 六方尖晶',hardness:'7',formula:'SiO₂',ri:'1.54–1.55',cause:'微量铁致金黄；市面多由紫水晶加热转化。',desc:'黄水晶是石英家族的金黄品种，天然者稀少。',sources:'巴西、玻利维亚、马达加斯加。',lore:'"财富之石"，十一月生辰石之一。',badges:['十一月生辰石','财富之石','石英家族']},
+rosequartz:{name:'芙蓉石',color:0xf0b0c0,img:'rosequartz',family:'quartz',habit:'pebble',sys:'三方 · 块状',hardness:'7',formula:'SiO₂',ri:'1.54–1.55',cause:'微量钛铁或纤维包体致柔和粉色。',desc:'芙蓉石（粉晶）色调柔美，是最受欢迎的"爱情之石"。',sources:'巴西、马达加斯加、印度。',lore:'象征爱与温柔。',badges:['爱情之石','柔粉色','石英家族']},
+tigereye:{name:'虎眼石',color:0xa8791f,img:'tigereye',family:'quartz',habit:'pebble',sys:'三方 · 纤维集合',hardness:'6.5–7',formula:'SiO₂',ri:'1.53–1.54',cause:'石英交代石棉纤维，平行纤维反光成金褐丝光。',desc:'虎眼石抛光后呈现随光转动的金褐丝绢光泽。',sources:'南非、西澳大利亚、纳米比亚。',lore:'象征勇气与守护。',badges:['猫眼效应','守护石','石英家族']},
+malachite:{name:'孔雀石',color:0x1a9060,img:'malachite',family:'other',habit:'nodule',sys:'单斜 · 同心带状',hardness:'3.5–4',formula:'Cu₂CO₃(OH)₂',ri:'1.66–1.91',cause:'铜致鲜绿，同心生长形成深浅绿条带。',desc:'孔雀石以绿色同心纹带闻名，可雕刻成器。',sources:'刚果、纳米比亚、俄罗斯乌拉尔。',lore:'古埃及用作眼影与护身符。',badges:['同心纹带','铜矿之绿','雕刻名石']},
+rhodochrosite:{name:'红纹石',color:0xe05878,img:'rhodochrosite',family:'other',habit:'pebble',sys:'三方 · 钟乳/块状',hardness:'3.5–4',formula:'MnCO₃',ri:'1.60–1.82',cause:'锰致玫瑰粉红，钟乳生长成粉白环纹。',desc:'红纹石以玫瑰粉与白色环纹著称，称"印加玫瑰"。',sources:'阿根廷、美国科罗拉多、秘鲁。',lore:'阿根廷国石，象征热烈的爱。',badges:['印加玫瑰','阿根廷国石','玫瑰环纹']},
+amber:{name:'琥珀',color:0xe8a020,img:'amber',family:'organic',habit:'nodule',sys:'有机 · 树脂结核',hardness:'2–2.5',formula:'C₁₀H₁₆O',ri:'1.54',cause:'远古树脂石化而成，常包裹古昆虫（"虫珀"）。',desc:'琥珀是数千万年前树脂石化的有机宝石。',sources:'波罗的海、多米尼加、缅甸、墨西哥。',lore:'"时光胶囊"，古称"北方的黄金"。',badges:['有机宝石','时光胶囊','北方黄金']},
+coral:{name:'红珊瑚',color:0xd83a3a,img:'coral',family:'organic',habit:'prismatic',sys:'有机 · 枝状',hardness:'3–4',formula:'CaCO₃（方解石）',ri:'1.49–1.66',cause:'珊瑚虫分泌的碳酸钙骨骼，铁与有机质致红。',desc:'红珊瑚需数十年成材，受保护而稀有。',sources:'地中海、日本、台湾。',lore:'吉祥辟邪之物，佛教七宝之一。',badges:['有机宝石','牛血红','佛教七宝']},
+labradorite:{name:'拉长石',color:0x5a7a9a,img:'labradorite',family:'other',habit:'pebble',sys:'三斜 · 板块状',hardness:'6–6.5',formula:'(Ca,Na)(Al,Si)₄O₈',ri:'1.56–1.57',cause:'内部片晶层对光干涉，闪现蓝绿金晕彩。',desc:'拉长石在特定角度闪现梦幻晕彩，如极光流动。',sources:'加拿大拉布拉多、马达加斯加、芬兰。',lore:'"极光石"，北欧传说中凝固的北极光。',badges:['拉长晕彩','极光石','长石家族']}
+};
+const SITES=[
+{sp:'ruby',name:'鸽血红宝石',loc:'缅甸·抹谷',lat:23.1,lon:96.4,note:'抹谷矿区所产"鸽血红"为全球红宝石之冠，带强荧光。'},
+{sp:'ruby',loc:'莫桑比克·蒙特普埃兹',lat:-13.1,lon:39.1,note:'2009 年发现的巨型矿区，现供应全球大部分红宝石。'},
+{sp:'ruby',loc:'越南·陆安',lat:22.0,lon:104.7,note:'1980 年代发现的优质红宝石与尖晶石矿区。'},
+{sp:'ruby',loc:'缅甸·孟素',lat:21.9,lon:97.3,note:'1990 年代起的商业红宝石主力矿区。'},
+{sp:'ruby',name:'格陵兰红宝石',loc:'格陵兰·阿帕鲁托克',lat:63.0,lon:-50.7,note:'北极圈附近 30 亿年岩层中的红宝石。'},
+{sp:'ruby',loc:'坦桑尼亚·松盖阿',lat:-10.7,lon:35.6,note:'温扎地区出产深红红宝石。'},
+{sp:'ruby',loc:'马达加斯加·安迪拉梅纳',lat:-17.0,lon:48.6,note:'非洲重要的红宝石新矿区。'},
+{sp:'ruby',loc:'肯尼亚·察沃',lat:-3.0,lon:38.5,note:'John Saul 矿的红宝石以浓红著称。'},
+{sp:'sapphire',loc:'斯里兰卡·拉特纳普勒',lat:7.8,lon:80.7,note:'"宝石之城"，矢车菊蓝与星光蓝宝石的故乡。'},
+{sp:'sapphire',loc:'克什米尔',lat:34.5,lon:75.2,note:'传奇"克什米尔矢车菊蓝"，天鹅绒质感，已近绝矿。'},
+{sp:'sapphire',loc:'马达加斯加·伊拉卡卡',lat:-22.6,lon:45.2,note:'1990 年代发现的世界级蓝宝石矿带。'},
+{sp:'sapphire',loc:'澳大利亚·新英格兰',lat:-30.3,lon:151.7,note:'深蓝调蓝宝石的重要商业产区。'},
+{sp:'sapphire',loc:'美国·蒙大拿',lat:46.9,lon:-110.9,note:'Yogo Gulch 出产纯净的"美国蓝"。'},
+{sp:'sapphire',loc:'泰国·北碧',lat:14.0,lon:99.5,note:'泰国传统蓝宝石矿区与热处理工艺中心。'},
+{sp:'sapphire',loc:'柬埔寨·拜林',lat:12.85,lon:102.6,note:'历史上著名的"拜林蓝"产地。'},
+{sp:'sapphire',loc:'中国·山东昌乐',lat:36.7,lon:118.8,note:'火山岩型蓝宝石，中国最大蓝宝石产地。'},
+{sp:'sapphire',loc:'尼日利亚·曼比拉',lat:6.9,lon:11.3,note:'高原玄武岩型深蓝蓝宝石产区。'},
+{sp:'sapphire',name:'帕帕拉恰',loc:'斯里兰卡·帕德玛',lat:6.9,lon:80.9,note:'"帕帕拉恰"莲花刚玉——粉橙色的稀有蓝宝石变种。'},
+{sp:'sapphire',loc:'埃塞俄比亚·阿克苏姆',lat:14.1,lon:38.7,note:'2016 年新发现的高品质蓝宝石矿。'},
+{sp:'emerald',loc:'哥伦比亚·木佐',lat:5.5,lon:-74.0,note:'木佐与契沃尔矿出产全球品质之最的祖母绿。'},
+{sp:'emerald',loc:'赞比亚·卡富布',lat:-13.1,lon:28.3,note:'非洲最大祖母绿产区，色偏蓝绿、净度高。'},
+{sp:'emerald',loc:'巴西·伊塔比拉',lat:-19.6,lon:-43.2,note:'巴西最重要的祖母绿矿区之一。'},
+{sp:'emerald',loc:'津巴布韦·桑达瓦纳',lat:-20.5,lon:30.0,note:'以小颗粒高饱和"桑达瓦纳绿"闻名。'},
+{sp:'emerald',name:'克利奥帕特拉祖母绿',loc:'埃及·红海山地',lat:24.8,lon:34.7,note:'公元前的古矿，克娄巴特拉的祖母绿即采于此。'},
+{sp:'emerald',loc:'阿富汗·潘杰希尔',lat:35.4,lon:69.7,note:'兴都库什山谷中媲美哥伦比亚料的顶级祖母绿。'},
+{sp:'emerald',loc:'巴基斯坦·斯瓦特',lat:35.3,lon:72.4,note:'斯瓦特河谷的高饱和小颗祖母绿。'},
+{sp:'emerald',loc:'美国·北卡希登奈特',lat:35.9,lon:-81.1,note:'北美唯一商业祖母绿矿，产出美国最大祖母绿。'},
+{sp:'emerald',loc:'俄罗斯·乌拉尔',lat:57.1,lon:61.4,note:'1831 年发现的马利舍沃祖母绿矿。'},
+{sp:'emerald',loc:'埃塞俄比亚·希达莫',lat:5.9,lon:38.5,note:'2016 年发现的高品质祖母绿新矿。'},
+{sp:'opal',loc:'埃塞俄比亚·沃罗',lat:9.1,lon:40.5,note:'沃罗水欧泊火彩强烈、价格亲民。'},
+{sp:'opal',loc:'澳大利亚·库伯佩迪',lat:-29.0,lon:134.8,note:'"世界欧泊之都"，白欧泊主产地，矿工住在地下城。'},
+{sp:'opal',loc:'巴西·皮奥伊',lat:-4.4,lon:-41.5,note:'南美重要的欧泊产区。'},
+{sp:'opal',name:'砾背欧泊',loc:'澳大利亚·昆士兰',lat:-24.9,lon:143.0,note:'铁矿石母岩上的"砾背欧泊"产地。'},
+{sp:'black-opal',loc:'澳大利亚·闪电岭',lat:-29.4,lon:148.0,note:'全球约 95% 黑欧泊产自此地。'},
+{sp:'fire-opal',loc:'墨西哥·克雷塔罗',lat:20.6,lon:-100.4,note:'火山岩空腔中孕育的橙红火欧泊。'},
+{sp:'jade',loc:'云南·腾冲',lat:25.0,lon:98.5,note:'缅甸翡翠原石的百年集散与加工重镇。'},
+{sp:'jade',loc:'缅甸·帕敢',lat:25.6,lon:96.3,note:'全球翡翠原石的唯一主产矿区。'},
+{sp:'jade',name:'玛雅翡翠',loc:'危地马拉·莫塔瓜',lat:15.4,lon:-89.9,note:'奥尔梅克与玛雅文明的翡翠来源，蓝绿调著称。'},
+{sp:'jade',loc:'俄罗斯·萨彦岭',lat:52.5,lon:98.0,note:'东萨彦岭的翡翠与软玉矿。'},
+{sp:'nephrite',loc:'新疆·和田',lat:37.1,lon:79.9,note:'玉龙喀什河的籽料羊脂白玉，华夏玉文化之源。'},
+{sp:'nephrite',loc:'加拿大·不列颠哥伦比亚',lat:53.0,lon:-122.0,note:'全球最大碧玉（软玉）产地。'},
+{sp:'nephrite',loc:'新西兰·南岛',lat:-42.8,lon:171.0,note:'毛利人的圣石"绿石"（Pounamu）。'},
+{sp:'nephrite',loc:'俄罗斯·布里亚特',lat:54.0,lon:111.0,note:'俄罗斯优质碧玉产区。'},
+{sp:'purple',loc:'泰国·尖竹汶',lat:12.6,lon:102.1,note:'东南亚重要的彩色宝石集散地。'},
+{sp:'purple',loc:'乌拉圭·阿蒂加斯',lat:-30.4,lon:-56.5,note:'深紫色晶洞紫水晶的顶级产地。'},
+{sp:'purple',loc:'巴西·南紫晶镇',lat:-27.4,lon:-53.2,note:'巨型紫晶洞的主产区。'},
+{sp:'purple',loc:'赞比亚·卡洛莫',lat:-17.0,lon:26.5,note:'非洲深紫紫水晶的重要产区。'},
+{sp:'purple',name:'紫红晶',loc:'南非·北开普',lat:-28.5,lon:21.5,note:'"紫红晶"（深红紫水晶）产地。'},
+{sp:'purple',loc:'印度·奥兰加巴德',lat:19.9,lon:75.3,note:'德干高原玄武岩晶洞中的紫水晶。'},
+{sp:'tanzanite',loc:'坦桑尼亚·梅雷拉尼',lat:-4.0,lon:35.8,note:'乞力马扎罗山脚，全球唯一坦桑石产地。'},
+{sp:'topaz',loc:'巴西·米纳斯',lat:-15.0,lon:-48.0,note:'"帝王托帕"金橙色料的核心产区。'},
+{sp:'topaz',loc:'尼日利亚·乔斯',lat:9.9,lon:8.9,note:'高原伟晶岩出产大颗透明托帕石。'},
+{sp:'topaz',name:'粉托帕石',loc:'巴基斯坦·卡特朗',lat:34.4,lon:72.0,note:'天然粉色托帕石的著名产地。'},
+{sp:'topaz',loc:'美国·犹他托帕山',lat:39.7,lon:-113.1,note:'犹他州州石，雪利酒色托帕石。'},
+{sp:'topaz',loc:'俄罗斯·乌拉尔',lat:57.0,lon:60.0,note:'乌拉尔伟晶岩的蓝色与酒色托帕石。'},
+{sp:'diamond',loc:'南非·金伯利',lat:-28.7,lon:24.8,note:'"大洞"矿开启了现代钻石工业。'},
+{sp:'diamond',loc:'俄罗斯·雅库特',lat:62.5,lon:114.0,note:'西伯利亚冻土上的巨型金伯利岩管群。'},
+{sp:'diamond',loc:'博茨瓦纳·奥拉帕',lat:-21.3,lon:25.4,note:'按价值计全球最大钻石产国的核心矿区。'},
+{sp:'diamond',loc:'加拿大·西北地区',lat:64.5,lon:-110.3,note:'极地冰原下的高净度钻石。'},
+{sp:'diamond',name:'粉钻',loc:'澳大利亚·阿盖尔',lat:-16.7,lon:128.4,note:'传奇粉钻矿，2020 年闭矿后粉钻愈发珍稀。'},
+{sp:'diamond',name:'戈尔康达钻石',loc:'印度·戈尔康达',lat:17.4,lon:78.5,note:'"光之山"与"希望"钻石的故乡。'},
+{sp:'diamond',loc:'巴西·迪亚曼蒂纳',lat:-18.2,lon:-43.6,note:'18 世纪钻石热的中心，城名即"钻石之城"。'},
+{sp:'diamond',loc:'安哥拉·卡托卡',lat:-9.4,lon:20.3,note:'全球第四大金伯利岩管。'},
+{sp:'diamond',name:'巨钻之乡',loc:'莱索托·莱特森',lat:-29.0,lon:28.7,note:'以频出 100 克拉级巨钻闻名的高海拔矿。'},
+{sp:'diamond',loc:'塞拉利昂·科伊杜',lat:8.6,lon:-10.9,note:'"塞拉利昂之星"（969 克拉）的产地。'},
+{sp:'diamond',name:'海钻',loc:'纳米比亚·奥兰治蒙德',lat:-28.6,lon:16.4,note:'大西洋海底冲积钻石，船采开采的先驱。'},
+{sp:'diamond',loc:'刚果·姆布吉马伊',lat:-6.1,lon:23.6,note:'全球最大工业钻石产地。'},
+{sp:'diamond',loc:'美国·阿肯色',lat:34.0,lon:-93.7,note:'"钻石坑"州立公园——游客可自行挖钻。'},
+{sp:'aquamarine',loc:'巴西·米纳斯',lat:-18.5,lon:-43.9,note:'"圣玛丽亚蓝"海蓝宝闻名于世。'},
+{sp:'aquamarine',loc:'巴基斯坦·什加尔',lat:35.4,lon:75.6,note:'喀喇昆仑高峰上的晶莹海蓝宝。'},
+{sp:'aquamarine',loc:'中国·新疆阿勒泰',lat:47.8,lon:88.1,note:'可可托海伟晶岩的经典产区。'},
+{sp:'aquamarine',loc:'莫桑比克·楠普拉',lat:-15.1,lon:39.3,note:'非洲高净度海蓝宝新产区。'},
+{sp:'aquamarine',loc:'纳米比亚·埃龙戈',lat:-21.6,lon:15.7,note:'埃龙戈山出产深蓝海蓝宝晶体。'},
+{sp:'tourmaline',loc:'巴西·帕拉伊巴',lat:-6.8,lon:-35.9,note:'霓虹蓝绿帕拉伊巴碧玺的原产地。'},
+{sp:'tourmaline',loc:'美国·加州帕拉',lat:33.4,lon:-117.1,note:'粉红碧玺传奇矿区，曾大量供奉慈禧太后。'},
+{sp:'tourmaline',loc:'尼日利亚·奥约',lat:8.0,lon:4.2,note:'色域宽广的碧玺新兴产地。'},
+{sp:'tourmaline',loc:'阿富汗·努里斯坦',lat:35.3,lon:70.9,note:'兴都库什山中的多彩碧玺伟晶岩。'},
+{sp:'tourmaline',name:'帕拉伊巴型碧玺',loc:'莫桑比克·马武科',lat:-16.5,lon:39.5,note:'含铜霓虹蓝绿碧玺的非洲产地。'},
+{sp:'tourmaline',loc:'美国·缅因',lat:44.6,lon:-70.5,note:'1820 年北美首个碧玺矿，粉绿双色料著名。'},
+{sp:'tourmaline',loc:'马达加斯加·安齐拉贝',lat:-19.9,lon:47.0,note:'多彩碧玺与摩根石共生的伟晶岩区。'},
+{sp:'garnet',loc:'印度·奥里萨',lat:20.9,lon:85.1,note:'古老的红榴石贸易中心。'},
+{sp:'garnet',loc:'莫桑比克·楠普拉',lat:-16.8,lon:38.5,note:'红榴石与沙弗莱的重要新产区。'},
+{sp:'garnet',name:'沙弗莱石榴石',loc:'肯尼亚·察沃',lat:-3.4,lon:38.5,note:'察沃国家公园发现的翠绿钙铝榴石。'},
+{sp:'garnet',name:'波希米亚石榴石',loc:'捷克·波希米亚',lat:50.5,lon:14.0,note:'欧洲皇室珠宝的经典深红榴石。'},
+{sp:'garnet',name:'翠榴石',loc:'纳米比亚·埃龙戈',lat:-21.4,lon:15.9,note:'"绿翠榴石"——火彩超钻石的绿石榴石。'},
+{sp:'garnet',name:'沙弗莱石',loc:'坦桑尼亚·梅雷拉尼',lat:-3.6,lon:36.9,note:'沙弗莱石榴石的另一主产地。'},
+{sp:'garnet',name:'马拉亚榴石',loc:'坦桑尼亚·翁巴',lat:-4.5,lon:38.4,note:'翁巴河谷的橙粉色"马拉亚"石榴石。'},
+{sp:'moonstone',loc:'斯里兰卡·米蒂亚戈达',lat:7.3,lon:80.6,note:'蓝光月光石的顶级产地。'},
+{sp:'moonstone',loc:'印度·泰米尔纳德',lat:10.8,lon:78.7,note:'印度传统月光石切磨中心。'},
+{sp:'moonstone',loc:'美国·弗吉尼亚',lat:37.5,lon:-77.4,note:'弗吉尼亚州石即月光石。'},
+{sp:'lapis',loc:'阿富汗·巴达赫尚',lat:36.7,lon:70.8,note:'六千年开采史的青金石圣地。'},
+{sp:'lapis',loc:'智利·奥瓦耶',lat:-30.6,lon:-71.2,note:'安第斯山中的青金石矿，智利国石。'},
+{sp:'lapis',loc:'俄罗斯·贝加尔',lat:51.7,lon:103.7,note:'贝加尔湖畔的深蓝青金石。'},
+{sp:'lapis',loc:'美国·加州圣贝纳迪诺',lat:34.2,lon:-116.4,note:'北美稀有的青金石产地。'},
+{sp:'turquoise',loc:'伊朗·内沙布尔',lat:36.2,lon:58.8,note:'"波斯蓝"标准的发源地。'},
+{sp:'turquoise',loc:'美国·亚利桑那金曼',lat:35.2,lon:-114.0,note:'美国西南绿松石的代表矿区。'},
+{sp:'turquoise',loc:'中国·湖北十堰',lat:32.6,lon:110.8,note:'中国绿松石之乡，云盖寺料著名。'},
+{sp:'turquoise',loc:'埃及·西奈半岛',lat:29.0,lon:33.8,note:'法老时代的绿松石圣矿。'},
+{sp:'turquoise',name:'睡美人绿松石',loc:'美国·亚利桑那格洛布',lat:33.4,lon:-110.8,note:'"睡美人"矿——纯净无铁线天蓝绿松石的标杆。'},
+{sp:'spinel',loc:'缅甸·抹谷',lat:22.9,lon:96.5,note:'与红宝石共生，历史上多被误认。'},
+{sp:'spinel',loc:'塔吉克斯坦·帕米尔',lat:37.5,lon:72.5,note:'历史名矿，"黑王子红宝石"的可能来源。'},
+{sp:'spinel',name:'马亨盖尖晶石',loc:'坦桑尼亚·马亨盖',lat:-8.7,lon:36.7,note:'霓虹粉红尖晶石令收藏界疯狂的产地。'},
+{sp:'spinel',loc:'越南·陆安',lat:22.05,lon:104.65,note:'安沛地区的钴蓝与红色尖晶石。'},
+{sp:'alexandrite',loc:'巴西·巴伊亚',lat:-13.0,lon:-41.0,note:'当代变石的重要产地。'},
+{sp:'alexandrite',name:'变石',loc:'俄罗斯·乌拉尔',lat:57.5,lon:61.0,note:'1830 年变石的发现地与命名地。'},
+{sp:'alexandrite',loc:'斯里兰卡·拉特纳普勒',lat:7.7,lon:80.6,note:'出产大颗猫眼变石。'},
+{sp:'pearl',loc:'波斯湾·巴林',lat:26.1,lon:50.5,note:'古代天然海水珠最负盛名的渔场。'},
+{sp:'pearl',loc:'日本·志摩',lat:34.3,lon:136.8,note:'御木本在此创立现代 akoya 养殖珍珠业。'},
+{sp:'pearl',name:'南洋珠',loc:'澳大利亚·布鲁姆',lat:-18.0,lon:122.2,note:'大颗南洋白珠的核心渔场。'},
+{sp:'pearl',name:'南珠',loc:'广西·合浦',lat:21.5,lon:109.1,note:'"东珠不如西珠，西珠不如南珠"的千年珠乡。'},
+{sp:'pearl',name:'大溪地黑珍珠',loc:'法属波利尼西亚',lat:-17.5,lon:-149.6,note:'黑蝶贝孕育的孔雀绿晕彩黑珍珠。'},
+{sp:'pearl',name:'金色南洋珠',loc:'印度尼西亚·望加锡',lat:-5.1,lon:119.4,note:'金唇贝孕育的金色南洋珍珠。'},
+{sp:'pearl',name:'孔克珍珠',loc:'加勒比·巴哈马',lat:24.0,lon:-76.0,note:'女王凤凰螺孕育的粉色"孔克珍珠"，无核天然。'},
+{sp:'morganite',loc:'巴西·米纳斯',lat:-19.0,lon:-43.0},
+{sp:'morganite',loc:'马达加斯加',lat:-22.3,lon:47.8,note:'摩根石的最早发现地之一。'},
+{sp:'morganite',loc:'美国·缅因',lat:44.4,lon:-70.4,note:'缅因伟晶岩的桃粉色摩根石。'},
+{sp:'morganite',loc:'莫桑比克·阿尔托利戈尼亚',lat:-15.8,lon:38.2,note:'非洲摩根石新产区。'},
+{sp:'zircon',loc:'柬埔寨·拉塔纳基里',lat:13.7,lon:107.0,note:'蓝锆石的经典产区。'},
+{sp:'zircon',loc:'澳大利亚·泥潭山',lat:-23.0,lon:134.3,note:'Mud Tank 出产大颗宝石级锆石。'},
+{sp:'zircon',loc:'坦桑尼亚·通杜鲁',lat:-11.1,lon:37.4,note:'非洲金色与红色锆石产地。'},
+{sp:'peridot',loc:'巴基斯坦·苏帕特',lat:35.9,lon:74.6,note:'高海拔矿区产大颗高净度晶体。'},
+{sp:'peridot',loc:'美国·亚利桑那',lat:33.1,lon:-110.5,note:'圣卡洛斯保留地供应全球大宗橄榄石。'},
+{sp:'peridot',name:'太阳宝石',loc:'埃及·圣约翰岛',lat:23.6,lon:36.2,note:'红海古矿，古罗马的"夜祖母绿"即产于此。'},
+{sp:'peridot',loc:'中国·张家口',lat:41.1,lon:114.5,note:'大麻坪玄武岩橄榄石的主产地。'},
+{sp:'peridot',loc:'挪威·奥尔斯塔',lat:63.7,lon:6.6,note:'åheim 橄榄岩体的欧洲橄榄石产地。'},
+{sp:'prehnite',loc:'南非·卡鲁',lat:-32.0,lon:24.0,note:'葡萄石的模式产地（1788 年命名于此）。'},
+{sp:'prehnite',loc:'澳大利亚·北领地',lat:-17.5,lon:131.0,note:'出产果冻感极佳的黄绿葡萄石。'},
+{sp:'prehnite',loc:'马里·卡伊',lat:14.4,lon:-11.4,note:'非洲西部的黄绿葡萄石与石榴石共生矿。'},
+{sp:'citrine',loc:'巴西·南大河',lat:-29.0,lon:-51.0},
+{sp:'citrine',name:'紫黄晶',loc:'玻利维亚·阿纳伊',lat:-18.3,lon:-59.5,note:'紫黄晶（Ametrine）的全球唯一商业矿山。'},
+{sp:'citrine',loc:'马达加斯加·菲亚纳兰楚阿',lat:-21.5,lon:47.1,note:'天然黄水晶的产地。'},
+{sp:'rosequartz',loc:'巴西·米纳斯',lat:-17.0,lon:-42.0},
+{sp:'rosequartz',loc:'马达加斯加·伊萨卢',lat:-22.4,lon:45.4,note:'星光芙蓉石的产地。'},
+{sp:'rosequartz',loc:'美国·南达科他',lat:44.0,lon:-103.5,note:'南达科他州石——布莱克山的芙蓉石。'},
+{sp:'tigereye',loc:'南非·北开普',lat:-29.0,lon:22.5,note:'全球虎眼石主产区。'},
+{sp:'tigereye',loc:'西澳·哈默斯利',lat:-22.7,lon:117.8,note:'铁矿带中的虎眼石变种"鹰眼"产地。'},
+{sp:'malachite',loc:'刚果·加丹加',lat:-11.0,lon:27.0,note:'铜矿带出产大块优质雕料。'},
+{sp:'malachite',loc:'俄罗斯·乌拉尔',lat:55.8,lon:59.8,note:'沙皇宫殿"孔雀石厅"的用料来源。'},
+{sp:'malachite',loc:'纳米比亚·楚梅布',lat:-19.2,lon:17.7,note:'世界著名的矿物标本圣地。'},
+{sp:'malachite',loc:'美国·亚利桑那比斯比',lat:31.4,lon:-109.9,note:'铜都比斯比出产孔雀石与蓝铜矿共生料。'},
+{sp:'rhodochrosite',loc:'阿根廷·安第斯',lat:-29.0,lon:-67.0,note:'印加银矿钟乳状"印加玫瑰"。'},
+{sp:'rhodochrosite',loc:'美国·科罗拉多',lat:39.3,lon:-106.2,note:'Sweet Home 矿出产宝石级红纹石，科罗拉多州矿。'},
+{sp:'rhodochrosite',loc:'南非·库鲁曼',lat:-27.5,lon:23.4,note:"N'Chwaning 矿的宝石级红纹石晶体。"},
+{sp:'amber',loc:'波罗的海·加里宁格勒',lat:54.7,lon:20.5,note:'全球最大琥珀矿区。'},
+{sp:'amber',name:'蓝珀',loc:'多米尼加',lat:19.0,lon:-70.5,note:'稀有蓝珀的唯一重要产地。'},
+{sp:'amber',name:'缅甸虫珀',loc:'缅甸·胡冈谷地',lat:26.4,lon:96.6,note:'恐龙时代的白垩纪琥珀，古生物宝库。'},
+{sp:'amber',loc:'墨西哥·恰帕斯',lat:16.8,lon:-92.6,note:'玛雅人使用的琥珀，多带红色调。'},
+{sp:'amber',loc:'中国·抚顺',lat:41.9,lon:123.9,note:'抚顺煤田的花珀，中国琥珀名产。'},
+{sp:'coral',loc:'地中海·撒丁岛',lat:40.0,lon:9.0,note:'"沙丁红"珊瑚的传统渔场。'},
+{sp:'coral',name:'血赤珊瑚',loc:'日本·高知',lat:33.0,lon:133.5,note:'深海"血赤珊瑚"闻名。'},
+{sp:'coral',loc:'台湾·澎湖',lat:23.6,lon:119.6,note:'20 世纪全球珊瑚贸易的重要基地。'},
+{sp:'coral',name:'桃色珊瑚',loc:'夏威夷·中途岛',lat:28.2,lon:-177.4,note:'太平洋深海桃色与金色珊瑚礁区。'},
+{sp:'labradorite',loc:'马达加斯加',lat:-20.0,lon:47.0},
+{sp:'labradorite',name:'光谱石',loc:'芬兰·于莱迈',lat:61.0,lon:26.2,note:'"光谱石"为晕彩最丰富的拉长石变种。'},
+{sp:'labradorite',loc:'加拿大·拉布拉多',lat:56.5,lon:-61.7,note:'1770 年的发现地，拉长石因此得名。'},
+{sp:'labradorite',loc:'美国·俄勒冈',lat:43.0,lon:-119.0,note:'俄勒冈"太阳石"——含铜闪光的透明拉长石。'},
+];
+const GEMS=SITES.map(function(s,i){var sp=SPECIES[s.sp];return Object.assign({},sp,s,{name:s.name||sp.name,_id:i});});
+const SP_COUNT={};GEMS.forEach(function(g){SP_COUNT[g.sp]=(SP_COUNT[g.sp]||0)+1;});
+
+const T={ocean:'#101c30',hypso:[[0.00,[56,50,42]],[0.20,[80,68,50]],[0.42,[108,88,56]],[0.62,[138,110,64]],[0.78,[162,138,90]],[0.90,[186,168,128]],[1.00,[226,216,192]]],coast:'rgba(210,190,150,0.22)',reliefA:0.34,glowColor:0x6fa8d8,glowK:0.55};
+
+let currentFilter='all',searchQ='';
+let scene,camera,renderer,earthGroup,globeMesh,envMap;
+let isDragging=false,prevMouse={x:0,y:0},autoRotate=true;
+let gemObjs=[],pickMeshes=[],clock;
+let spinToTarget=null,camZTarget=2.8;
+const CAM_FAR=2.8,CAM_NEAR=1.8;
+const imgCache={}, matCache={};
+
+const canvas=document.getElementById('globe-canvas');
+const wrap=document.getElementById('globe-wrap');
+const tooltip=document.getElementById('tooltip');
+const overlay=document.getElementById('modal-overlay');
+const loadMsg=document.getElementById('load-msg');
+const listEl=document.getElementById('gem-list');
+const countEl=document.getElementById('gem-count');
+
+function ll2v3(lat,lon,r){const phi=(90-lat)*Math.PI/180;const theta=(lon+180)*Math.PI/180;return new THREE.Vector3(-r*Math.sin(phi)*Math.cos(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(theta));}
+function collectRings(world){const rings=[];function pushGeom(geom){if(!geom) return;const polys=geom.type==='Polygon'?[geom.coordinates]:geom.type==='MultiPolygon'?geom.coordinates:[];polys.forEach(function(poly){poly.forEach(function(ring){ if(ring.length>=3) rings.push(ring); });});}const objs=world.objects||{};if(objs.land) pushGeom(topojson.feature(world,objs.land).geometry);if(rings.length===0 && objs.countries){ topojson.feature(world,objs.countries).features.forEach(function(f){pushGeom(f.geometry);}); }return rings;}
+function ringToContinuousLon(ring){const out=[[ring[0][0],ring[0][1]]];let offset=0;for(let i=1;i<ring.length;i++){let lon=ring[i][0];const prevRaw=ring[i-1][0];if(lon-prevRaw>180) offset-=360; else if(lon-prevRaw<-180) offset+=360;out.push([lon+offset, ring[i][1]]);}return out;}
+function hypsoColor(h){const stops=T.hypso;for(let i=1;i<stops.length;i++){if(h<=stops[i][0]){const a=stops[i-1],b=stops[i];const t=(h-a[0])/(b[0]-a[0]);return [Math.round(a[1][0]+(b[1][0]-a[1][0])*t),Math.round(a[1][1]+(b[1][1]-a[1][1])*t),Math.round(a[1][2]+(b[1][2]-a[1][2])*t)];}}return stops[stops.length-1][1];}
+
+function drawLandCanvas(rings, topoImg){
+  const TW=4096,TH=2048;const cv=document.createElement('canvas');cv.width=TW;cv.height=TH;const ctx=cv.getContext('2d');
+  const proj=function(lon,lat){return [(lon+180)/360*TW,(90-lat)/180*TH];};const contRings=rings.map(ringToContinuousLon);
+  function landPath(c){c.beginPath();contRings.forEach(function(ring){[-360,0,360].forEach(function(off){ring.forEach(function(pt,i){var p=proj(pt[0]+off,pt[1]);i===0?c.moveTo(p[0],p[1]):c.lineTo(p[0],p[1]);});c.closePath();});});}
+  ctx.fillStyle=T.ocean;ctx.fillRect(0,0,TW,TH);
+  for(let i=0;i<16000;i++){const a=Math.random();ctx.fillStyle=a<0.5?('rgba(160,190,230,'+(Math.random()*0.045)+')'):('rgba(0,0,0,'+(Math.random()*0.05)+')');ctx.fillRect(Math.random()*TW,Math.random()*TH,2,2);}
+  ctx.strokeStyle='rgba(140,175,215,0.055)';ctx.lineWidth=1.2;
+  for(let lon=-180;lon<=180;lon+=15){ctx.beginPath();ctx.moveTo((lon+180)/360*TW,0);ctx.lineTo((lon+180)/360*TW,TH);ctx.stroke();}
+  for(let lat=-75;lat<=75;lat+=15){ctx.beginPath();const y=(90-lat)/180*TH;ctx.moveTo(0,y);ctx.lineTo(TW,y);ctx.stroke();}
+  const tint=document.createElement('canvas');tint.width=TW;tint.height=TH;const tctx=tint.getContext('2d');
+  if(topoImg){const tmp=document.createElement('canvas');tmp.width=TW;tmp.height=TH;const mctx=tmp.getContext('2d');mctx.drawImage(topoImg,0,0,TW,TH);const src=mctx.getImageData(0,0,TW,TH);const dst=tctx.createImageData(TW,TH);const sd=src.data,dd=dst.data;for(let i=0;i<sd.length;i+=4){const h=sd[i]/255;const c=hypsoColor(h);dd[i]=c[0];dd[i+1]=c[1];dd[i+2]=c[2];dd[i+3]=255;}tctx.putImageData(dst,0,0);}else{tctx.fillStyle='#6a5a40';tctx.fillRect(0,0,TW,TH);}
+  const clip=document.createElement('canvas');clip.width=TW;clip.height=TH;const cctx=clip.getContext('2d');cctx.drawImage(tint,0,0);cctx.globalCompositeOperation='destination-in';landPath(cctx);cctx.fill('nonzero');ctx.drawImage(clip,0,0);
+  if(topoImg){const relief=document.createElement('canvas');relief.width=TW;relief.height=TH;const rctx=relief.getContext('2d');rctx.drawImage(topoImg,0,0,TW,TH);rctx.globalCompositeOperation='destination-in';landPath(rctx);rctx.fill('nonzero');ctx.save();ctx.globalAlpha=T.reliefA;ctx.globalCompositeOperation='multiply';ctx.drawImage(relief,0,0);ctx.restore();ctx.save();ctx.globalAlpha=T.reliefA*0.9;ctx.globalCompositeOperation='screen';ctx.drawImage(relief,0,0);ctx.restore();}
+  function strokePath(off){ctx.beginPath();contRings.forEach(function(ring){ring.forEach(function(pt,i){var p=proj(pt[0]+off,pt[1]);i===0?ctx.moveTo(p[0],p[1]):ctx.lineTo(p[0],p[1]);});});ctx.stroke();}
+  ctx.strokeStyle=T.coast;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';[-360,0,360].forEach(strokePath);
+  for(let i=0;i<14000;i++){ctx.fillStyle='rgba(255,250,240,'+(Math.random()*0.03)+')';ctx.fillRect(Math.random()*TW,Math.random()*TH,1.6,1.6);}
+  for(let i=0;i<8000;i++){ctx.fillStyle='rgba(0,0,0,'+(Math.random()*0.035)+')';ctx.fillRect(Math.random()*TW,Math.random()*TH,1.6,1.6);}
+  for(let i=0;i<2500;i++){ctx.fillStyle='rgba(255,245,230,'+(Math.random()*0.018)+')';ctx.fillRect(Math.random()*TW,Math.random()*TH,3,3);}
+  return cv;
+}
+function drawStars(){
+  const c=document.getElementById('stars');c.width=wrap.clientWidth;c.height=wrap.clientHeight;const x=c.getContext('2d');
+  for(let i=0;i<170;i++){const r=Math.random();const tint=r<0.12?'255,220,170':(r<0.25?'170,200,255':'235,240,250');x.fillStyle='rgba('+tint+','+(0.12+Math.random()*0.5)+')';const s=Math.random()<0.88?1:2;x.fillRect(Math.random()*c.width,Math.random()*c.height,s,s);}
+}
+
+function uvWrap(geo){const pos=geo.attributes.position;const uv=[];let minY=1e9,maxY=-1e9;for(let i=0;i<pos.count;i++){const y=pos.getY(i);if(y<minY)minY=y;if(y>maxY)maxY=y;}for(let i=0;i<pos.count;i++){const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);uv.push((Math.atan2(z,x)/(Math.PI*2))+0.5,(y-minY)/(maxY-minY||1));}geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.computeVertexNormals();return geo;}
+function roughen(geo,amt){const p=geo.attributes.position;const seen={};for(let i=0;i<p.count;i++){const k=p.getX(i).toFixed(4)+','+p.getY(i).toFixed(4)+','+p.getZ(i).toFixed(4);let d=seen[k];if(!d){d=[(Math.random()-0.5)*amt,(Math.random()-0.5)*amt,(Math.random()-0.5)*amt];seen[k]=d;}p.setXYZ(i,p.getX(i)+d[0],p.getY(i)+d[1],p.getZ(i)+d[2]);}p.needsUpdate=true;return geo;}
+function corundumHabit(U){const g=new THREE.CylinderGeometry(U*0.92,U*0.82,U*1.7,6,2);roughen(g,U*0.12);return uvWrap(g);}
+function berylHabit(U){const g=new THREE.CylinderGeometry(U*0.6,U*0.62,U*2.6,6,3);roughen(g,U*0.10);return uvWrap(g);}
+function quartzHabit(U){const body=new THREE.CylinderGeometry(U*0.55,U*0.55,U*1.8,6,2);const tip=new THREE.CylinderGeometry(0.001,U*0.55,U*1.0,6,1);tip.translate(0,U*1.4,0);const m=mergeGeo([body,tip]);roughen(m,U*0.09);return uvWrap(m);}
+function prismaticHabit(U){const body=new THREE.CylinderGeometry(U*0.62,U*0.66,U*2.0,4,2);body.rotateY(Math.PI/4);const tip=new THREE.CylinderGeometry(0.001,U*0.62*1.41,U*0.7,4,1);tip.rotateY(Math.PI/4);tip.translate(0,U*1.35,0);const m=mergeGeo([body,tip]);roughen(m,U*0.11);return uvWrap(m);}
+function noduleHabit(U){const g=new THREE.IcosahedronGeometry(U*1.05,1);roughen(g,U*0.22);g.scale(1.1,0.8,1.0);return uvWrap(g);}
+function pebbleHabit(U){const g=new THREE.IcosahedronGeometry(U*1.0,1);roughen(g,U*0.16);g.scale(1.25,0.7,1.0);return uvWrap(g);}
+function octaHabit(U){const g=new THREE.OctahedronGeometry(U*1.15,0);roughen(g,U*0.05);return uvWrap(g);}
+function sphereHabit(U){const g=new THREE.SphereGeometry(U*0.95,20,16);return uvWrap(g);}
+function mergeGeo(geos){const arrays=geos.map(function(g){return g.index?g.toNonIndexed():g;});let total=0;arrays.forEach(function(g){total+=g.attributes.position.count;});const pos=new Float32Array(total*3);let o=0;arrays.forEach(function(g){const p=g.attributes.position.array;pos.set(p,o);o+=p.length;});const m=new THREE.BufferGeometry();m.setAttribute('position',new THREE.BufferAttribute(pos,3));m.computeVertexNormals();return m;}
+function makeHabitGeo(g,U){switch(g.habit){case 'corundum':return corundumHabit(U);case 'beryl':return berylHabit(U);case 'quartz':return quartzHabit(U);case 'prismatic':return prismaticHabit(U);case 'nodule':return noduleHabit(U);case 'pebble':return pebbleHabit(U);case 'octa':return octaHabit(U);case 'sphere':return sphereHabit(U);default:return corundumHabit(U);}}
+
+function deriveMaps(img, baseHex){
+  const SZ=256;function base(){const cv=document.createElement('canvas');cv.width=SZ;cv.height=SZ;return cv;}
+  const mapCv=base();const mctx=mapCv.getContext('2d');const s=Math.max(SZ/img.width,SZ/img.height);const dw=img.width*s,dh=img.height*s;mctx.drawImage(img,(SZ-dw)/2,(SZ-dh)/2,dw,dh);
+  const id=mctx.getImageData(0,0,SZ,SZ);const d=id.data;const br=(baseHex>>16)&255,bg=(baseHex>>8)&255,bb=baseHex&255;
+  const bump=base(),rough=base();const bd=bump.getContext('2d').createImageData(SZ,SZ),rd=rough.getContext('2d').createImageData(SZ,SZ);
+  for(let i=0;i<d.length;i+=4){let r=d[i],g=d[i+1],b=d[i+2];const mx=Math.max(r,g,b),mn=Math.min(r,g,b);const lum=(r*0.299+g*0.587+b*0.114)/255;const sat=mx===0?0:(mx-mn)/mx;
+    if(lum>0.62&&sat<0.22){const k=0.45+lum*0.5;r=Math.min(255,br*k);g=Math.min(255,bg*k);b=Math.min(255,bb*k);}else{r=r*0.7+br*0.3;g=g*0.7+bg*0.3;b=b*0.7+bb*0.3;}
+    r*=0.85;g*=0.85;b*=0.85;d[i]=r;d[i+1]=g;d[i+2]=b;const L=(r*0.299+g*0.587+b*0.114);bd.data[i]=bd.data[i+1]=bd.data[i+2]=L;bd.data[i+3]=255;const rr=Math.max(0,255-L*0.9);rd.data[i]=rd.data[i+1]=rd.data[i+2]=rr;rd.data[i+3]=255;}
+  mctx.putImageData(id,0,0);bump.getContext('2d').putImageData(bd,0,0);rough.getContext('2d').putImageData(rd,0,0);
+  const mk=function(cv){const t=new THREE.CanvasTexture(cv);t.anisotropy=8;t.needsUpdate=true;return t;};const mapTex=mk(mapCv);mapTex.encoding=THREE.sRGBEncoding;return {map:mapTex,bump:mk(bump),rough:mk(rough)};
+}
+function getGemMaterial(g){if(matCache[g.img]) return matCache[g.img];const img=imgCache[g.img];let mat;const glossy=(g.family==='corundum'||g.habit==='beryl'||g.habit==='quartz'||g.habit==='prismatic'||g.habit==='octa');const pearl=(g.habit==='sphere');if(img){const m=deriveMaps(img,g.color);mat=new THREE.MeshPhysicalMaterial({map:m.map,bumpMap:m.bump,bumpScale:pearl?0.01:(glossy?0.05:0.09),roughnessMap:pearl?null:m.rough,roughness:pearl?0.25:(glossy?0.32:0.55),metalness:0.0,clearcoat:pearl?1.0:(glossy?0.85:0.35),clearcoatRoughness:pearl?0.25:(glossy?0.12:0.4),envMap:envMap,envMapIntensity:glossy?1.2:0.7,reflectivity:glossy?0.8:0.4});}else{mat=new THREE.MeshPhysicalMaterial({color:g.color,roughness:0.3,clearcoat:0.8,envMap:envMap,envMapIntensity:1.0});}matCache[g.img]=mat;return mat;}
+
+function makeGem(g){
+  const group=new THREE.Group();
+  const up=ll2v3(g.lat,g.lon,1).normalize();const baseQuat=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),up);
+  const Ubase=0.026;const mat=getGemMaterial(g);
+  const single=(g.habit==='octa'||g.habit==='sphere');
+  const n=single?1:(3+Math.floor(Math.random()*3));
+  for(let k=0;k<n;k++){const isMain=(k===0);const U=Ubase*(single?1.05:(isMain?(0.95+Math.random()*0.25):(0.4+Math.random()*0.45)));const geo=makeHabitGeo(g,U);const m=new THREE.Mesh(geo,mat);const dLat=single?0:(Math.random()-0.5)*(isMain?0.5:2.0);const dLon=single?0:(Math.random()-0.5)*(isMain?0.5:2.0);const lift=1.045+U*0.42;m.position.copy(ll2v3(g.lat+dLat,g.lon+dLon,lift));const localUp=m.position.clone().normalize();m.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),localUp));m.rotateY(Math.random()*Math.PI*2);if(!single){const tilt=(g.habit==='nodule'||g.habit==='pebble')?0.9:0.5;m.rotateX((Math.random()-0.5)*tilt);m.rotateZ((Math.random()-0.5)*tilt);}m.userData={gem:g};group.add(m);pickMeshes.push(m);}
+  const ring=new THREE.Mesh(new THREE.RingGeometry(Ubase*1.5,Ubase*2.05,32),new THREE.MeshBasicMaterial({color:g.color,transparent:true,opacity:0.28,side:THREE.DoubleSide,depthWrite:false}));
+  ring.position.copy(ll2v3(g.lat,g.lon,1.044));ring.quaternion.copy(baseQuat);ring.rotateX(Math.PI/2);group.add(ring);
+  group.userData={gem:g,ring};return group;
+}
+
+function init(){
+  const W=wrap.clientWidth,H=wrap.clientHeight;
+  drawStars();
+  scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(45,W/H,0.1,100);camera.position.set(0,0,CAM_FAR);
+  renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));renderer.setSize(W,H);renderer.setClearColor(0x000000,0);renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
+  scene.add(new THREE.AmbientLight(0xffffff,0.62));
+  const sun=new THREE.DirectionalLight(0xffe9c8,0.95);sun.position.set(4,2.5,5);scene.add(sun);
+  const rim=new THREE.DirectionalLight(0x9ab8dc,0.42);rim.position.set(-5,-1,-3);scene.add(rim);
+  const spark=new THREE.PointLight(0xffffff,0.45,10);spark.position.set(2,3,3);scene.add(spark);
+  earthGroup=new THREE.Group();scene.add(earthGroup);clock=new THREE.Clock();addAtmosphere();
+  const pmrem=new THREE.PMREMGenerator(renderer);pmrem.compileEquirectangularShader();
+  const envP=new Promise(function(res){new THREE.TextureLoader().setCrossOrigin('anonymous').load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/2294472375_24a3b8ef46_o.jpg',function(tex){tex.mapping=THREE.EquirectangularReflectionMapping;envMap=pmrem.fromEquirectangular(tex).texture;tex.dispose();res();},undefined,function(){envMap=pmrem.fromScene(fallbackEnv(),0,0.1,100).texture;res();});});
+  const topoP=new Promise(function(res){const img=new Image();img.crossOrigin='anonymous';img.onload=function(){res(img);};img.onerror=function(){res(null);};img.src='https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png';});
+  const dataP=fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); });
+  const imgNames=[...new Set(GEMS.map(function(g){return g.img;}))];
+  const gemImgP=Promise.all(imgNames.map(function(n){return new Promise(function(res){const im=new Image();im.crossOrigin='anonymous';im.onload=function(){imgCache[n]=im;res();};im.onerror=function(){imgCache[n]=null;res();};im.src=BASE+n+'.jpg';});}));
+  Promise.all([dataP,topoP,envP,gemImgP]).then(function(arr){
+    const world=arr[0],topoImg=arr[1];
+    const rings=collectRings(world);
+    if(rings.length===0){ loadMsg.textContent='地图数据为空'; setTimeout(function(){loadMsg.style.display='none';},2500); buildGlobe(null,topoImg);addMarkers();return; }
+    loadMsg.style.display='none';
+    buildGlobe(drawLandCanvas(rings,topoImg),topoImg);
+    addMarkers();
+  }).catch(function(err){ loadMsg.textContent='加载失败: '+err.message; setTimeout(function(){loadMsg.style.display='none';},3000); buildGlobe(null,null);addMarkers(); });
+  buildList();animate();setupEvents();
+}
+function fallbackEnv(){const s=new THREE.Scene();s.background=new THREE.Color(0x445060);[[0xaac4dd,8,10,5],[0xffffff,-10,8,-4],[0xe8d8b0,5,-8,8],[0xffffff,0,12,-6]].forEach(function(a){const p=new THREE.Mesh(new THREE.PlaneGeometry(16,16),new THREE.MeshBasicMaterial({color:a[0]}));p.position.set(a[1],a[2],a[3]);p.lookAt(0,0,0);s.add(p);});return s;}
+function addAtmosphere(){
+  const geo=new THREE.SphereGeometry(1.06,64,64);
+  const mat=new THREE.ShaderMaterial({transparent:true,blending:THREE.AdditiveBlending,side:THREE.BackSide,depthWrite:false,
+    uniforms:{glow:{value:new THREE.Color(T.glowColor)},k:{value:T.glowK}},
+    vertexShader:'varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:'varying vec3 vN;uniform vec3 glow;uniform float k;void main(){float i=pow(1.0-abs(vN.z),4.0);gl_FragColor=vec4(glow,i*k);}'});
+  scene.add(new THREE.Mesh(geo,mat));
+}
+function buildGlobe(landCanvas, topoImg){
+  const geo=new THREE.SphereGeometry(1,400,400);let mat;
+  if(landCanvas){
+    const tex=new THREE.CanvasTexture(landCanvas);tex.needsUpdate=true;tex.anisotropy=renderer.capabilities.getMaxAnisotropy();tex.minFilter=THREE.LinearFilter;tex.magFilter=THREE.LinearFilter;tex.generateMipmaps=false;tex.encoding=THREE.sRGBEncoding;
+    mat=new THREE.MeshPhongMaterial({map:tex,shininess:2,specular:0x0a0c10});
+    if(topoImg){const bump=new THREE.Texture(topoImg);bump.needsUpdate=true;mat.bumpMap=bump;mat.bumpScale=0.035;mat.displacementMap=bump;mat.displacementScale=0.045;mat.displacementBias=0;}
+  } else { mat=new THREE.MeshPhongMaterial({color:0x1c3048,shininess:2}); }
+  globeMesh=new THREE.Mesh(geo,mat);earthGroup.add(globeMesh);
+}
+function addMarkers(){gemObjs.forEach(function(g){earthGroup.remove(g);});gemObjs=[];pickMeshes=[];GEMS.forEach(function(g){if(!markerPass(g)) return;const obj=makeGem(g);earthGroup.add(obj);gemObjs.push(obj);});}
+function markerPass(g){if(currentFilter!=='all'&&g.family!==currentFilter) return false;if(searchQ){const q=searchQ.toLowerCase();if(!(g.name.toLowerCase().indexOf(q)>=0||g.loc.toLowerCase().indexOf(q)>=0)) return false;}return true;}
+
+function familyName(f){return {corundum:'刚玉族',beryl:'绿柱石族',jade:'翠玉',quartz:'石英族',organic:'有机宝石',other:'其他矿物'}[f];}
+function buildList(){
+  listEl.innerHTML='';
+  let list=GEMS.filter(markerPass);
+  const dedupe=(currentFilter==='all' && !searchQ);
+  if(dedupe){
+    const seen={};const reps=[];
+    list.forEach(function(g){ if(!seen[g.sp]){seen[g.sp]=1;reps.push(g);} });
+    list=reps;
+    countEl.innerHTML='<span><b>'+reps.length+'</b> 种宝石</span><span>共 <b>'+GEMS.length+'</b> 处产区</span>';
+  } else {
+    const spCount=new Set(list.map(function(g){return g.sp;})).size;
+    countEl.innerHTML='<span><b>'+list.length+'</b> 处产区</span><span><b>'+spCount+'</b> 种宝石</span>';
+  }
+  list.forEach(function(g){
+    const card=document.createElement('div');card.className='gem-card';card.dataset.id=g._id;
+    const spName=SPECIES[g.sp].name;
+    if(dedupe){
+      const cnt=SP_COUNT[g.sp];
+      card.innerHTML='<img src="'+BASE+g.img+'.jpg" alt=""/><div class="info"><div class="nm">'+spName+'</div><div class="lc">'+familyName(SPECIES[g.sp].family)+'</div></div><div class="cnt">'+cnt+' 处</div>';
+    } else {
+      card.innerHTML='<img src="'+BASE+g.img+'.jpg" alt=""/><div class="info"><div class="nm">'+g.name+'</div><div class="lc">'+g.loc+'</div></div><div class="swatch" style="background:#'+g.color.toString(16).padStart(6,'0')+'"></div>';
+    }
+    card.addEventListener('click',function(){focusGem(g);showDetail(g);highlightCard(g._id);});
+    card.addEventListener('mouseenter',function(){hovered=gemObjs.find(function(o){return o.userData.gem===g;})||null;});
+    card.addEventListener('mouseleave',function(){hovered=null;});
+    listEl.appendChild(card);
+  });
+}
+function highlightCard(id){document.querySelectorAll('.gem-card').forEach(function(c){c.classList.toggle('active',+c.dataset.id===id);});}
+function focusGem(g){autoRotate=false;const yTarget=-(g.lon)*Math.PI/180 - Math.PI/2;const xTarget=THREE.MathUtils.clamp(g.lat*Math.PI/180*0.8,-1.2,1.2);spinToTarget={y:yTarget,x:xTarget};camZTarget=CAM_NEAR;}
+
+let hovered=null;
+function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();
+  if(spinToTarget){earthGroup.rotation.y+=(spinToTarget.y-earthGroup.rotation.y)*0.08;earthGroup.rotation.x+=(spinToTarget.x-earthGroup.rotation.x)*0.08;if(Math.abs(spinToTarget.y-earthGroup.rotation.y)<0.01){earthGroup.rotation.y=spinToTarget.y;spinToTarget=null;}}
+  else if(!isDragging&&autoRotate) earthGroup.rotation.y+=0.0012;
+  camera.position.z+=(camZTarget-camera.position.z)*0.06;
+  gemObjs.forEach(function(obj,i){if(obj.userData.ring) obj.userData.ring.material.opacity=(obj===hovered?0.42:0.18)+0.06*Math.abs(Math.sin(t*1.0+i*0.7));const target=(obj===hovered)?1.07:1.0;obj.scale.lerp(new THREE.Vector3(target,target,target),0.05);});
+  renderer.render(scene,camera);}
+const raycaster=new THREE.Raycaster();const mouse2d=new THREE.Vector2();
+function getNDC(e){const r=canvas.getBoundingClientRect();return {x:((e.clientX-r.left)/r.width)*2-1,y:-((e.clientY-r.top)/r.height)*2+1};}
+function hits(e){const nd=getNDC(e);mouse2d.set(nd.x,nd.y);raycaster.setFromCamera(mouse2d,camera);return raycaster.intersectObjects(pickMeshes);}
+function setupEvents(){
+  canvas.addEventListener('mousedown',function(e){isDragging=true;autoRotate=false;spinToTarget=null;prevMouse={x:e.clientX,y:e.clientY};});window.addEventListener('mouseup',function(){isDragging=false;});
+  canvas.addEventListener('mousemove',function(e){if(isDragging){earthGroup.rotation.y+=(e.clientX-prevMouse.x)*.006;earthGroup.rotation.x+=(e.clientY-prevMouse.y)*.006;earthGroup.rotation.x=Math.max(-1.2,Math.min(1.2,earthGroup.rotation.x));prevMouse={x:e.clientX,y:e.clientY};return;}const h=hits(e);if(h.length){const g=h[0].object.userData.gem;hovered=gemObjs.find(function(o){return o.userData.gem===g;})||null;tooltip.style.display='block';tooltip.textContent=g.name+' · '+g.loc;const r=wrap.getBoundingClientRect();tooltip.style.left=(e.clientX-r.left+12)+'px';tooltip.style.top=(e.clientY-r.top-8)+'px';canvas.style.cursor='pointer';highlightCard(g._id);}else{hovered=null;tooltip.style.display='none';canvas.style.cursor='grab';}});
+  canvas.addEventListener('click',function(e){const h=hits(e);if(h.length){const g=h[0].object.userData.gem;focusGem(g);showDetail(g);highlightCard(g._id);}});
+  // 触摸支持（移动端）
+  canvas.addEventListener('touchstart',function(e){if(e.touches.length===1){isDragging=true;autoRotate=false;spinToTarget=null;prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};}},{passive:true});
+  canvas.addEventListener('touchmove',function(e){if(isDragging&&e.touches.length===1){earthGroup.rotation.y+=(e.touches[0].clientX-prevMouse.x)*.006;earthGroup.rotation.x+=(e.touches[0].clientY-prevMouse.y)*.006;earthGroup.rotation.x=Math.max(-1.2,Math.min(1.2,earthGroup.rotation.x));prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};}},{passive:true});
+  canvas.addEventListener('touchend',function(){isDragging=false;});
+  document.getElementById('close-btn').addEventListener('click',closeModal);
+  overlay.addEventListener('click',function(e){if(e.target===overlay) closeModal();});
+  document.querySelectorAll('.chip').forEach(function(btn){btn.addEventListener('click',function(){document.querySelectorAll('.chip').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');currentFilter=btn.dataset.f;addMarkers();buildList();});});
+  document.getElementById('search').addEventListener('input',function(e){searchQ=e.target.value;addMarkers();buildList();});
+  window.addEventListener('resize',function(){const W=wrap.clientWidth,H=wrap.clientHeight;camera.aspect=W/H;camera.updateProjectionMatrix();renderer.setSize(W,H);drawStars();});
+}
+function closeModal(){overlay.style.display='none';autoRotate=true;highlightCard(-1);camZTarget=CAM_FAR;}
+function showDetail(g){
+  overlay.style.display='flex';document.getElementById('dp-scroll').scrollTop=0;
+  const ph=document.getElementById('dp-photo');ph.src=BASE+g.img+'.jpg';ph.alt=g.name;
+  document.getElementById('dp-name').textContent=g.name;document.getElementById('dp-loc').textContent=g.loc;
+  const bd=document.getElementById('dp-badges');bd.innerHTML=(g.badges||[]).map(function(b){return '<span class="badge">'+b+'</span>';}).join('');
+  const noteEl=document.getElementById('dp-note');
+  if(g.note){noteEl.style.display='block';noteEl.textContent='📍 '+g.note;}else{noteEl.style.display='none';}
+  document.getElementById('dp-desc').textContent=g.desc;
+  document.getElementById('dp-family').textContent=familyName(g.family);
+  document.getElementById('dp-formula').textContent=g.formula;document.getElementById('dp-hardness').textContent=g.hardness;
+  document.getElementById('dp-sys').textContent=g.sys;document.getElementById('dp-ri').textContent=g.ri;
+  document.getElementById('dp-cause').textContent=g.cause;document.getElementById('dp-sources').textContent=g.sources;
+  document.getElementById('dp-lore').textContent=g.lore;
+}
+init();
+})();
+</script>
+</body>
+</html>

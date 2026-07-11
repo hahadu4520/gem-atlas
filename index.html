@@ -84,6 +84,23 @@ body{font-family:var(--font-sans);display:flex;flex-direction:column;align-items
 #gem-app #detail-modal .lore{font-size:12px;line-height:1.65;color:#d0b890;font-style:italic;background:rgba(201,169,110,.08);border-left:2px solid #c9a96e;padding:8px 10px;border-radius:0 6px 6px 0;margin-top:4px}
 #gem-app #close-btn{position:absolute;top:10px;right:10px;background:#1a2438;border:1px solid rgba(201,169,110,.45);font-size:16px;cursor:pointer;color:#c9b88a;border-radius:50%;width:26px;height:26px;z-index:3;line-height:1}
 #gem-app #load-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#c9b48a;font-size:13px;text-align:center;padding:0 20px;z-index:5}
+#gem-app #quest-pill{position:absolute;top:12px;left:12px;z-index:12;display:flex;align-items:center;gap:6px;padding:6px 13px;border-radius:16px;border:1px solid rgba(201,169,110,.55);background:rgba(16,25,43,.88);font-size:11.5px;color:#f0dca6;cursor:pointer;max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s}
+#gem-app #quest-pill:hover{background:rgba(36,51,80,.95)}
+#gem-app #quest-pill .qn{color:#c9a96e;font-weight:500}
+#gem-app #cont-strip{position:absolute;left:12px;right:12px;bottom:10px;z-index:11;display:flex;gap:6px;justify-content:center;pointer-events:none}
+#gem-app .cont-cell{flex:1;max-width:96px;background:rgba(16,25,43,.82);border:1px solid rgba(201,169,110,.3);border-radius:8px;padding:4px 7px}
+#gem-app .cont-cell .cn{font-size:9.5px;color:#c9b88a;display:flex;justify-content:space-between}
+#gem-app .cont-cell .bar{height:3px;border-radius:2px;background:rgba(255,255,255,.1);margin-top:3px;overflow:hidden}
+#gem-app .cont-cell .bar i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#c9a96e,#f0d896);transition:width .5s}
+#gem-app .cont-cell.done{border-color:#f0d896;box-shadow:0 0 8px rgba(240,216,150,.3)}
+#gem-app #toast{position:absolute;top:52px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:40;background:rgba(20,28,48,.96);border:1px solid #f0d896;border-radius:12px;padding:9px 18px;font-size:12.5px;color:#f5e6bc;opacity:0;pointer-events:none;transition:opacity .35s,transform .35s;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+#gem-app #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#gem-app #quest-modal .ql{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-top:.5px solid rgba(201,169,110,.22);font-size:12px}
+#gem-app #quest-modal .ql .st{flex-shrink:0;width:18px;text-align:center}
+#gem-app #quest-modal .ql.done .qt{color:#8a94a8;text-decoration:line-through}
+#gem-app #quest-modal .qt{color:#ece2c8;font-weight:500}
+#gem-app #quest-modal .qd{color:#9aa4b8;font-size:11px;margin-top:1px}
+#gem-app .gem-card .tick{font-size:11px;color:#f0d896;flex-shrink:0}
 </style>
 
 <div id="gem-app">
@@ -556,6 +573,78 @@ function showDetail(g){
   document.getElementById('dp-cause').textContent=g.cause;document.getElementById('dp-sources').textContent=g.sources;
   document.getElementById('dp-lore').textContent=g.lore;
 }
+// ================= 游戏化：寻宝任务 + 大洲探索度 =================
+const CONT_MAP={'缅甸':'亚洲','越南':'亚洲','泰国':'亚洲','柬埔寨':'亚洲','中国':'亚洲','云南':'亚洲','新疆':'亚洲','广西':'亚洲','台湾':'亚洲','日本':'亚洲','印度':'亚洲','斯里兰卡':'亚洲','巴基斯坦':'亚洲','阿富汗':'亚洲','塔吉克斯坦':'亚洲','伊朗':'亚洲','克什米尔':'亚洲','波斯湾':'亚洲','印度尼西亚':'亚洲','俄罗斯':'亚洲','捷克':'欧洲','芬兰':'欧洲','挪威':'欧洲','波罗的海':'欧洲','地中海':'欧洲','莫桑比克':'非洲','赞比亚':'非洲','坦桑尼亚':'非洲','肯尼亚':'非洲','埃塞俄比亚':'非洲','埃及':'非洲','津巴布韦':'非洲','南非':'非洲','纳米比亚':'非洲','尼日利亚':'非洲','马达加斯加':'非洲','刚果':'非洲','安哥拉':'非洲','莱索托':'非洲','塞拉利昂':'非洲','博茨瓦纳':'非洲','马里':'非洲','美国':'北美洲','加拿大':'北美洲','墨西哥':'北美洲','危地马拉':'北美洲','多米尼加':'北美洲','加勒比':'北美洲','格陵兰':'北美洲','巴西':'南美洲','哥伦比亚':'南美洲','阿根廷':'南美洲','玻利维亚':'南美洲','乌拉圭':'南美洲','智利':'南美洲','秘鲁':'南美洲','澳大利亚':'大洋洲','西澳':'大洋洲','新西兰':'大洋洲','法属波利尼西亚':'大洋洲','夏威夷':'大洋洲'};
+const CONTS=['亚洲','欧洲','非洲','北美洲','南美洲','大洋洲'];
+function contOf(g){const tk=g.loc.split('·')[0];return CONT_MAP[tk]||'亚洲';}
+const CONT_TOTAL={};ITEMS.forEach(function(g){const c=contOf(g);CONT_TOTAL[c]=(CONT_TOTAL[c]||0)+1;});
+let visited=new Set();try{visited=new Set(JSON.parse(localStorage.getItem('gemAtlasVisited')||'[]'));}catch(e){}
+let questDone={};try{questDone=JSON.parse(localStorage.getItem('gemAtlasQuests')||'{}');}catch(e){}
+function saveGame(){try{localStorage.setItem('gemAtlasVisited',JSON.stringify([...visited]));localStorage.setItem('gemAtlasQuests',JSON.stringify(questDone));}catch(e){}}
+function vItems(){return ITEMS.filter(function(i){return visited.has(i._id);});}
+const CN_SET=['中国','云南','新疆','广西','台湾'];
+const QUESTS=[
+ {id:'first',name:'初探宝库',desc:'查看任意一处产地的详情',check:function(v){return v.length>=1;}},
+ {id:'king',name:'朝圣宝石之王',desc:'查看缅甸·抹谷的鸽血红宝石',check:function(v){return v.some(function(i){return i.loc==='缅甸·抹谷'&&i.sp==='ruby';});}},
+ {id:'arctic',name:'北极寻宝',desc:'找到北极圈附近的红宝石（格陵兰）',check:function(v){return v.some(function(i){return i.loc.indexOf('格陵兰')>=0;});}},
+ {id:'unique',name:'全球唯一',desc:'找到全球只有一处产地的宝石（坦桑石）',check:function(v){return v.some(function(i){return i.sp==='tanzanite';});}},
+ {id:'june',name:'六月生辰石',desc:'月光石、变石、珍珠各看一处',check:function(v){var s=new Set(v.map(function(i){return i.sp;}));return s.has('moonstone')&&s.has('alexandrite')&&s.has('pearl');}},
+ {id:'dia5',name:'钻石猎人',desc:'查看 5 处钻石产地',check:function(v){return v.filter(function(i){return i.sp==='diamond';}).length>=5;}},
+ {id:'organic',name:'有机三宝',desc:'珍珠、琥珀、红珊瑚各看一处',check:function(v){var s=new Set(v.map(function(i){return i.sp;}));return s.has('pearl')&&s.has('amber')&&s.has('coral');}},
+ {id:'china',name:'华夏宝藏',desc:'查看 3 处中国产地',check:function(v){return v.filter(function(i){return CN_SET.indexOf(i.loc.split('·')[0])>=0;}).length>=3;}},
+ {id:'africa',name:'非洲探索者',desc:'探索非洲一半以上的产区',check:function(v){var n=v.filter(function(i){return contOf(i)==='非洲';}).length;return n>=Math.ceil((CONT_TOTAL['非洲']||1)/2);}},
+ {id:'master',name:'图鉴大师',desc:'集齐全部 '+Object.keys(SPECIES).length+' 种宝石',check:function(v){return new Set(v.map(function(i){return i.sp;})).size>=Object.keys(SPECIES).length;}}
+];
+let toastTimer=null,toastQueue=[];
+function toast(msg){toastQueue.push(msg);if(!toastTimer)nextToast();}
+function nextToast(){const el=document.getElementById('toast');if(!el||!toastQueue.length){toastTimer=null;return;}el.textContent=toastQueue.shift();el.classList.add('show');toastTimer=setTimeout(function(){el.classList.remove('show');toastTimer=setTimeout(nextToast,380);},2600);}
+let contDoneShown={};
+function updateGame(){
+  const v=vItems();
+  // 任务检查
+  QUESTS.forEach(function(q){if(!questDone[q.id]&&q.check(v)){questDone[q.id]=1;toast('🎉 任务完成：'+q.name);}});
+  // 大洲探索
+  const strip=document.getElementById('cont-strip');
+  if(strip){const cv={};v.forEach(function(i){const c=contOf(i);cv[c]=(cv[c]||0)+1;});
+    strip.innerHTML='';CONTS.forEach(function(c){const n=cv[c]||0,tot=CONT_TOTAL[c]||0;const pct=tot?Math.round(n/tot*100):0;
+      const cell=document.createElement('div');cell.className='cont-cell'+(pct>=100?' done':'');
+      cell.innerHTML='<div class="cn"><span>'+c+'</span><span>'+n+'/'+tot+'</span></div><div class="bar"><i style="width:'+pct+'%"></i></div>';
+      strip.appendChild(cell);
+      if(pct>=100&&tot>0&&!contDoneShown[c]){contDoneShown[c]=1;if(visited.size>0)toast('🏆 '+c+'探索完成！');}});}
+  // 任务胶囊
+  const pill=document.getElementById('quest-pill');
+  if(pill){const doneN=QUESTS.filter(function(q){return questDone[q.id];}).length;
+    const cur=QUESTS.find(function(q){return !questDone[q.id];});
+    pill.innerHTML=cur?('🎯 <span class="qn">任务 '+(doneN+1)+'/'+QUESTS.length+'</span> '+cur.name+'：'+cur.desc):('🏆 全部任务完成！你是真正的图鉴大师');}
+  saveGame();
+}
+function openQuestModal(){
+  let qm=document.getElementById('quest-modal');
+  if(!qm){qm=document.createElement('div');qm.id='quest-modal';qm.style.cssText='position:absolute;inset:0;background:rgba(5,8,14,.55);display:flex;align-items:center;justify-content:center;z-index:35;border-radius:14px';
+    qm.addEventListener('click',function(e){if(e.target===qm)qm.style.display='none';});wrap.appendChild(qm);}
+  const v=vItems();const spN=new Set(v.map(function(i){return i.sp;})).size;
+  let rows='';QUESTS.forEach(function(q){const d=!!questDone[q.id];rows+='<div class="ql'+(d?' done':'')+'"><span class="st">'+(d?'✅':'⬜')+'</span><div><div class="qt">'+q.name+'</div><div class="qd">'+q.desc+'</div></div></div>';});
+  qm.innerHTML='<div style="width:300px;max-height:440px;background:#131c30;border:1px solid rgba(201,169,110,.55);border-radius:16px;padding:16px 18px;overflow-y:auto;box-shadow:0 12px 44px rgba(0,0,0,.6)">'
+    +'<div style="font-size:16px;font-weight:500;color:#f0e6cc;text-align:center;margin-bottom:4px">🗺️ 寻宝任务</div>'
+    +'<div style="font-size:11px;color:#9aa4b8;text-align:center;margin-bottom:10px">已收集 '+spN+'/'+Object.keys(SPECIES).length+' 种宝石 · 探索 '+visited.size+'/'+ITEMS.length+' 处产区</div>'
+    +rows+'</div>';
+  qm.style.display='flex';
+  qm.addEventListener('click',function(e){if(e.target===qm)qm.style.display='none';});
+}
+function initGame(){
+  const pill=document.createElement('div');pill.id='quest-pill';wrap.appendChild(pill);
+  pill.addEventListener('click',openQuestModal);
+  const strip=document.createElement('div');strip.id='cont-strip';wrap.appendChild(strip);
+  const tst=document.createElement('div');tst.id='toast';wrap.appendChild(tst);
+  // 已完成的大洲不再重复祝贺（恢复进度时静默）
+  const cv0={};vItems().forEach(function(i){const c=contOf(i);cv0[c]=(cv0[c]||0)+1;});
+  CONTS.forEach(function(c){if((cv0[c]||0)>=(CONT_TOTAL[c]||1))contDoneShown[c]=1;});
+  // 拦截 showDetail：查看详情 = 收集该产地
+  const _sd=showDetail;
+  showDetail=function(g){if(!visited.has(g._id)){visited.add(g._id);updateGame();}_sd(g);};
+  updateGame();
+}
+initGame();
 init();
 })();
 </script>
